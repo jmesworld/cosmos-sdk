@@ -101,37 +101,6 @@ func (k Keeper) AllocateTokens(
 		// Based on that we run into a deterministic list the 100 validators that received their daily rewards
 		// THere is 28 daily unique selection.
 		// The same validators are paid for a period of 17280 blocks.
-		//val sdk.ValAddress, del sdk.AccAddress, info types.DelegatorStartingInfo
-
-		// We iterated over delegator
-		k.IterateDelegatorStartingInfos(ctx, func(val sdk.ValAddress, del sdk.AccAddress, infos types.DelegatorStartingInfo) (stop bool) {
-			fmt.Fprintln(os.Stderr, "Address:", val.String(), "del:", del.String(), "infos:", infos)
-			return false
-		})
-		k.IterateValidatorCurrentRewards(ctx, func(val sdk.ValAddress, rewards types.ValidatorCurrentRewards) (stop bool) {
-			accumulated := k.GetValidatorAccumulatedCommission(ctx, val)
-			fmt.Fprintln(os.Stderr, "Address:", val.String(), "current rewards:", rewards,
-				"accumulated:", accumulated.String(), accumulated.Commission.String())
-			return false
-		})
-		k.IterateValidatorAccumulatedCommissions(ctx, func(val sdk.ValAddress, commission types.ValidatorAccumulatedCommission) (stop bool) {
-			fmt.Fprintln(os.Stderr, "Address:", val.String(), "accumulated commissions:", commission.Commission.String())
-			return false
-		})
-		k.IterateValidatorHistoricalRewards(ctx,
-			func(val sdk.ValAddress, period uint64, rewards types.ValidatorHistoricalRewards) (stop bool) {
-				accumulated := k.GetValidatorAccumulatedCommission(ctx, val)
-				fmt.Fprintln(os.Stderr, "Address:", val.String(), "on period", period, "rewards:", rewards,
-					"accumulated:", accumulated.String(), accumulated.Commission.String())
-				return false
-			},
-		)
-		k.IterateValidatorOutstandingRewards(ctx,
-			func(val sdk.ValAddress, rewards types.ValidatorOutstandingRewards) (stop bool) {
-				fmt.Fprintln(os.Stderr, "Address:", val.String(), "outstanding rewards:", rewards)
-				return false
-			},
-		)
 	}
 	// allocate tokens proportionally to voting power
 	// TODO consider parallelizing later, ref https://github.com/cosmos/cosmos-sdk/pull/3099#discussion_r246276376
@@ -149,7 +118,7 @@ func (k Keeper) AllocateTokens(
 	}
 
 	// allocate community funding
-	// TODO: Transfert to smart-contract instead. Modifiable address via proposal voting.
+	// TODO: Transfer to smart-contract instead. Modifiable address via proposal voting.
 	// Keep any remaining to community pool.
 	feePool.CommunityPool = feePool.CommunityPool.Add(remaining...)
 	k.SetFeePool(ctx, feePool)

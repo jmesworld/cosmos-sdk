@@ -15,7 +15,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/testutil/network"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/distribution/client/cli"
-	fixedminttypes "github.com/cosmos/cosmos-sdk/x/fixedmint/types"
+	minttypes "github.com/cosmos/cosmos-sdk/x/mint/types"
 )
 
 type IntegrationTestSuite struct {
@@ -37,8 +37,8 @@ func (s *IntegrationTestSuite) SetupTest() {
 	s.T().Log("setting up integration test suite")
 
 	genesisState := s.cfg.GenesisState
-	var mintData fixedminttypes.GenesisState
-	s.Require().NoError(s.cfg.Codec.UnmarshalJSON(genesisState[fixedminttypes.ModuleName], &mintData))
+	var mintData minttypes.GenesisState
+	s.Require().NoError(s.cfg.Codec.UnmarshalJSON(genesisState[minttypes.ModuleName], &mintData))
 
 	inflation := sdk.MustNewDecFromStr("1.0")
 	mintData.Minter.Inflation = inflation
@@ -47,7 +47,7 @@ func (s *IntegrationTestSuite) SetupTest() {
 
 	mintDataBz, err := s.cfg.Codec.MarshalJSON(&mintData)
 	s.Require().NoError(err)
-	genesisState[fixedminttypes.ModuleName] = mintDataBz
+	genesisState[minttypes.ModuleName] = mintDataBz
 	s.cfg.GenesisState = genesisState
 
 	s.network = network.New(s.T(), s.cfg)

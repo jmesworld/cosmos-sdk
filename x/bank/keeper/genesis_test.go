@@ -4,7 +4,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/query"
 	"github.com/cosmos/cosmos-sdk/x/bank/types"
-	fixedminttypes "github.com/cosmos/cosmos-sdk/x/fixedmint/types"
+	minttypes "github.com/cosmos/cosmos-sdk/x/mint/types"
 )
 
 func (suite *IntegrationTestSuite) TestExportGenesis() {
@@ -21,10 +21,10 @@ func (suite *IntegrationTestSuite) TestExportGenesis() {
 		// set balances via mint and send
 		suite.
 			Require().
-			NoError(app.BankKeeper.MintCoins(ctx, fixedminttypes.ModuleName, expectedBalances[i].Coins))
+			NoError(app.BankKeeper.MintCoins(ctx, minttypes.ModuleName, expectedBalances[i].Coins))
 		suite.
 			Require().
-			NoError(app.BankKeeper.SendCoinsFromModuleToAccount(ctx, fixedminttypes.ModuleName, accAddr, expectedBalances[i].Coins))
+			NoError(app.BankKeeper.SendCoinsFromModuleToAccount(ctx, minttypes.ModuleName, accAddr, expectedBalances[i].Coins))
 	}
 	app.BankKeeper.SetParams(ctx, types.DefaultParams())
 

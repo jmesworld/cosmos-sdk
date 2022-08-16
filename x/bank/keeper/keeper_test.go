@@ -20,7 +20,7 @@ import (
 	vesting "github.com/cosmos/cosmos-sdk/x/auth/vesting/types"
 	"github.com/cosmos/cosmos-sdk/x/bank/keeper"
 	"github.com/cosmos/cosmos-sdk/x/bank/types"
-	fixedminttypes "github.com/cosmos/cosmos-sdk/x/fixedmint/types"
+	minttypes "github.com/cosmos/cosmos-sdk/x/mint/types"
 )
 
 const (
@@ -146,9 +146,9 @@ func (suite *IntegrationTestSuite) TestSendCoinsFromModuleToAccount_Blocklist() 
 	addr1 := sdk.AccAddress([]byte("addr1_______________"))
 	_, keeper := suite.initKeepersWithmAccPerms(map[string]bool{addr1.String(): true})
 
-	suite.Require().NoError(keeper.MintCoins(ctx, fixedminttypes.ModuleName, initCoins))
+	suite.Require().NoError(keeper.MintCoins(ctx, minttypes.ModuleName, initCoins))
 	suite.Require().Error(keeper.SendCoinsFromModuleToAccount(
-		ctx, fixedminttypes.ModuleName, addr1, initCoins,
+		ctx, minttypes.ModuleName, addr1, initCoins,
 	))
 }
 
@@ -163,11 +163,11 @@ func (suite *IntegrationTestSuite) TestSupply_SendCoins() {
 	// set initial balances
 	suite.
 		Require().
-		NoError(keeper.MintCoins(ctx, fixedminttypes.ModuleName, initCoins))
+		NoError(keeper.MintCoins(ctx, minttypes.ModuleName, initCoins))
 
 	suite.
 		Require().
-		NoError(keeper.SendCoinsFromModuleToAccount(ctx, fixedminttypes.ModuleName, holderAcc.GetAddress(), initCoins))
+		NoError(keeper.SendCoinsFromModuleToAccount(ctx, minttypes.ModuleName, holderAcc.GetAddress(), initCoins))
 
 	authKeeper.SetModuleAccount(ctx, holderAcc)
 	authKeeper.SetModuleAccount(ctx, burnerAcc)

@@ -14,9 +14,9 @@ import (
 	simappparams "github.com/cosmos/cosmos-sdk/simapp/params"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	simtypes "github.com/cosmos/cosmos-sdk/types/simulation"
-	fixedminttypes "github.com/cosmos/cosmos-sdk/x/fixedmint/types"
 	"github.com/cosmos/cosmos-sdk/x/gov/simulation"
 	"github.com/cosmos/cosmos-sdk/x/gov/types"
+	minttypes "github.com/cosmos/cosmos-sdk/x/mint/types"
 )
 
 type MockWeightedProposalContent struct {
@@ -255,8 +255,8 @@ func createTestApp(isCheckTx bool) (*simapp.SimApp, sdk.Context) {
 	app := simapp.Setup(isCheckTx)
 
 	ctx := app.BaseApp.NewContext(isCheckTx, tmproto.Header{})
-	app.FixedMintKeeper.SetParams(ctx, fixedminttypes.DefaultParams())
-	app.FixedMintKeeper.SetMinter(ctx, fixedminttypes.DefaultInitialMinter())
+	app.MintKeeper.SetParams(ctx, minttypes.DefaultParams())
+	app.MintKeeper.SetMinter(ctx, minttypes.DefaultInitialMinter())
 
 	return app, ctx
 }

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"testing"
 
-	fixedminttypes "github.com/cosmos/cosmos-sdk/x/fixedmint/types"
+	minttypes "github.com/cosmos/cosmos-sdk/x/mint/types"
 
 	"github.com/stretchr/testify/suite"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
@@ -91,10 +91,10 @@ func (suite *AnteTestSuite) CreateTestAccounts(numAccs int) []TestAccount {
 		someCoins := sdk.Coins{
 			sdk.NewInt64Coin("atom", 10000000),
 		}
-		err = suite.app.BankKeeper.MintCoins(suite.ctx, fixedminttypes.ModuleName, someCoins)
+		err = suite.app.BankKeeper.MintCoins(suite.ctx, minttypes.ModuleName, someCoins)
 		suite.Require().NoError(err)
 
-		err = suite.app.BankKeeper.SendCoinsFromModuleToAccount(suite.ctx, fixedminttypes.ModuleName, addr, someCoins)
+		err = suite.app.BankKeeper.SendCoinsFromModuleToAccount(suite.ctx, minttypes.ModuleName, addr, someCoins)
 		suite.Require().NoError(err)
 
 		accounts = append(accounts, TestAccount{acc, priv})

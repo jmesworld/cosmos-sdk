@@ -14,7 +14,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	simtypes "github.com/cosmos/cosmos-sdk/types/simulation"
 	distrtypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
-	fixedminttypes "github.com/cosmos/cosmos-sdk/x/fixedmint/types"
+	minttypes "github.com/cosmos/cosmos-sdk/x/mint/types"
 	"github.com/cosmos/cosmos-sdk/x/staking/simulation"
 	"github.com/cosmos/cosmos-sdk/x/staking/teststaking"
 	"github.com/cosmos/cosmos-sdk/x/staking/types"
@@ -267,8 +267,8 @@ func createTestApp(isCheckTx bool) (*simapp.SimApp, sdk.Context) {
 	app := simapp.Setup(isCheckTx)
 
 	ctx := app.BaseApp.NewContext(isCheckTx, tmproto.Header{})
-	app.FixedMintKeeper.SetParams(ctx, fixedminttypes.DefaultParams())
-	app.FixedMintKeeper.SetMinter(ctx, fixedminttypes.DefaultInitialMinter())
+	app.MintKeeper.SetParams(ctx, minttypes.DefaultParams())
+	app.MintKeeper.SetMinter(ctx, minttypes.DefaultInitialMinter())
 
 	return app, ctx
 }
