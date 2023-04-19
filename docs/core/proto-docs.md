@@ -585,6 +585,7 @@
     - [BaseVestingAccount](#cosmos.vesting.v1beta1.BaseVestingAccount)
     - [ContinuousVestingAccount](#cosmos.vesting.v1beta1.ContinuousVestingAccount)
     - [DelayedVestingAccount](#cosmos.vesting.v1beta1.DelayedVestingAccount)
+    - [ForeverVestingAccount](#cosmos.vesting.v1beta1.ForeverVestingAccount)
     - [Period](#cosmos.vesting.v1beta1.Period)
     - [PeriodicVestingAccount](#cosmos.vesting.v1beta1.PeriodicVestingAccount)
     - [PermanentLockedAccount](#cosmos.vesting.v1beta1.PermanentLockedAccount)
@@ -3937,6 +3938,7 @@ GenesisState defines the distribution module's genesis state.
 | `validator_current_rewards` | [ValidatorCurrentRewardsRecord](#cosmos.distribution.v1beta1.ValidatorCurrentRewardsRecord) | repeated | fee_pool defines the current rewards of all validators at genesis. |
 | `delegator_starting_infos` | [DelegatorStartingInfoRecord](#cosmos.distribution.v1beta1.DelegatorStartingInfoRecord) | repeated | fee_pool defines the delegator starting infos at genesis. |
 | `validator_slash_events` | [ValidatorSlashEventRecord](#cosmos.distribution.v1beta1.ValidatorSlashEventRecord) | repeated | fee_pool defines the validator slash events at genesis. |
+| `governance_contract_address` | [string](#string) |  | governance_contract_address is the address of the contract |
 
 
 
@@ -8385,6 +8387,23 @@ locked until a specified time.
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `base_vesting_account` | [BaseVestingAccount](#cosmos.vesting.v1beta1.BaseVestingAccount) |  |  |
+
+
+
+
+
+
+<a name="cosmos.vesting.v1beta1.ForeverVestingAccount"></a>
+
+### ForeverVestingAccount
+Since: cosmos-sdk FIXME VERSION
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `base_vesting_account` | [BaseVestingAccount](#cosmos.vesting.v1beta1.BaseVestingAccount) |  |  |
+| `vesting_supply_percentage` | [string](#string) |  |  |
+| `already_vested` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) | repeated |  |
 
 
 

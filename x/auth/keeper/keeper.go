@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"fmt"
+	types2 "github.com/cosmos/cosmos-sdk/x/auth/vesting/types"
 
 	gogotypes "github.com/gogo/protobuf/types"
 	"github.com/tendermint/tendermint/libs/log"
@@ -27,6 +28,9 @@ type AccountKeeperI interface {
 
 	// Retrieve an account from the store.
 	GetAccount(sdk.Context, sdk.AccAddress) types.AccountI
+
+	// Retrieve all forever vesting account from the store.
+	GetAllForeverVestingAccounts(sdk.Context) []types2.ForeverVestingAccount
 
 	// Set an account in the store.
 	SetAccount(sdk.Context, types.AccountI)

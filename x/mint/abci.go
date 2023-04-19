@@ -30,23 +30,12 @@ func BeginBlocker(ctx sdk.Context, k keeper.Keeper) {
 	mintedCoin := minter.BlockProvision(params)
 	mintedCoins := sdk.NewCoins(mintedCoin)
 
-	isDevEnv := ctx.ChainID() == "jmes-888"
-	faucetAccAddress, _ := sdk.AccAddressFromBech32("jmes137q2vzcu267afzr45crw9x0e97ykrx5t98z7n0")
-	if isDevEnv {
-		faucetBalance := sdk.NewDecCoinFromCoin(k.BankKeeper.GetBalance(ctx, faucetAccAddress, "ujmes"))
-		minFaucetBalance := sdk.NewDecCoin("ujmes", sdk.NewInt(100000000))
-		logger.Info("Faucet balance", "amount", faucetBalance)
-		if faucetBalance.IsLT(minFaucetBalance) {
-			mintingAmount := minFaucetBalance.Sub(faucetBalance)
-			logger.Info("Faucet balance is than minFaucetBalance", "faucet balance", faucetBalance, "min faucet:", minFaucetBalance, ". To be minted:", mintingAmount, "to", faucetAccAddress.String())
-			k.BankKeeper.MintCoins(ctx, types.ModuleName, sdk.NewCoins(sdk.NewCoin("ujmes", sdk.NewInt(mintingAmount.Amount.RoundInt64()))))
-			if err := k.BankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, faucetAccAddress, sdk.NewCoins(sdk.NewCoin("ujmes", sdk.NewInt(mintingAmount.Amount.RoundInt64())))); err != nil {
-				panic(err)
-			}
-		}
-	}
+	logger.Info("=============== =============== ===============")
+	logger.Info("=============== MINTER.BeginBlocker(%v)", "height", ctx.BlockHeader().Height)
+	logger.Info("=============== MINTER.coinbaseReward(%v)", "reward", mintedCoin)
+	logger.Info("=============== =============== ===============")
 
-	currentSupply := k.BankKeeper.GetSupply(ctx, "ujmes").Amount
+	currentSupply := k.GetSupply(ctx, "ujmes").Amount
 	expectedNextSupply := int(sdk.NewInt(currentSupply.Int64()).Add(mintedCoins.AmountOf("ujmes")).Int64())
 	maxSupply := int(params.MaxMintableAmount) * 1e6
 	logger.Info("Prepare to mint", "mintAmount", mintedCoins.AmountOf("ujmes").String(), ".currentSupply", currentSupply, "expectedNextSupply", expectedNextSupply, "maxSupply", maxSupply)

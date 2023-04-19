@@ -80,6 +80,7 @@ func (m Minter) NextAnnualProvisions(_ Params, totalSupply sdk.Int) sdk.Dec {
 func (m Minter) BlockProvision(params Params) sdk.Coin {
 	blocksPerYear := sdk.NewDec(int64(params.BlocksPerYear))
 	currentHeight := sdk.NewDec(m.BlockHeader.GetHeight())
+	//currentHeight := sdk.NewDec(6311520 * 2)
 
 	currentYear := currentHeight.Quo(blocksPerYear).TruncateDec()
 	mintedAmountPerBlock := params.MintedAmountPerBlock
@@ -89,5 +90,31 @@ func (m Minter) BlockProvision(params Params) sdk.Coin {
 		mintedAmountPerBlock = mintedAmountPerBlock.Sub(reductionAmount)
 	}
 	provisionAmt := mintedAmountPerBlock
+	return sdk.NewCoin(params.MintDenom, provisionAmt.TruncateInt())
+}
+
+// BlockPeriodProvision returns the provisions for a block based on the period
+func (m Minter) BlockPeriodProvision(params Params) sdk.Coin {
+	fmt.Println("BlockPeriodProvision ", params.BlocksPerYear)
+	fmt.Println("params.BlocksPerYear: ", params.BlocksPerYear)
+	blocksPerPeriod := sdk.NewDec(int64(params.BlocksPerYear))
+	currentHeight := sdk.NewDec(m.BlockHeader.GetHeight())
+	//currentHeight := sdk.NewDec(6311520 * 2)
+
+	fmt.Println("currentHeight: ", currentHeight)
+
+	currentPeriod := currentHeight.Quo(blocksPerPeriod).TruncateDec()
+	fmt.Println("currentPeriod: ", currentPeriod)
+	fmt.Println("currentYearlyReduction: ", params.YearlyReduction)
+
+	mintedAmountPerBlock := params.MintedAmountPerBlock
+
+	for i := 0; i < int(currentPeriod.RoundInt64()); i++ {
+		reductionAmount := mintedAmountPerBlock.Mul(params.YearlyReduction)
+		mintedAmountPerBlock = mintedAmountPerBlock.Sub(reductionAmount)
+	}
+	provisionAmt := mintedAmountPerBlock
+	fmt.Println("BlockPeriodProvision: ", sdk.NewCoin(params.MintDenom, provisionAmt.TruncateInt()))
+
 	return sdk.NewCoin(params.MintDenom, provisionAmt.TruncateInt())
 }

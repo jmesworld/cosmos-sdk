@@ -15,7 +15,7 @@ type Keeper struct {
 	storeKey         sdk.StoreKey
 	paramSpace       paramtypes.Subspace
 	stakingKeeper    types.StakingKeeper
-	BankKeeper       types.BankKeeper
+	bankKeeper       types.BankKeeper
 	feeCollectorName string
 }
 
@@ -40,7 +40,7 @@ func NewKeeper(
 		storeKey:         key,
 		paramSpace:       paramSpace,
 		stakingKeeper:    sk,
-		BankKeeper:       bk,
+		bankKeeper:       bk,
 		feeCollectorName: feeCollectorName,
 	}
 }
@@ -100,11 +100,25 @@ func (k Keeper) MintCoins(ctx sdk.Context, newCoins sdk.Coins) error {
 		return nil
 	}
 
-	return k.BankKeeper.MintCoins(ctx, types.ModuleName, newCoins)
+	return k.bankKeeper.MintCoins(ctx, types.ModuleName, newCoins)
+}
+
+// GetSupply implements an alias call to the underlying supply keeper's
+// GetSupply to be used in BeginBlocker.
+func (k Keeper) GetSupply(ctx sdk.Context, denom string) sdk.Coin {
+	return k.bankKeeper.GetSupply(ctx, denom)
+}
+
+func (k Keeper) GetBalance(ctx sdk.Context, addr sdk.AccAddress, denom string) sdk.Coin {
+	return k.bankKeeper.GetBalance(ctx, addr, denom)
+}
+
+func (k Keeper) SendCoinsFromModuleToAccount(ctx sdk.Context, senderModule string, recipientAddr sdk.AccAddress, amt sdk.Coins) error {
+	return k.bankKeeper.SendCoinsFromModuleToAccount(ctx, senderModule, recipientAddr, amt)
 }
 
 // AddCollectedFees implements an alias call to the underlying supply keeper's
 // AddCollectedFees to be used in BeginBlocker.
 func (k Keeper) AddCollectedFees(ctx sdk.Context, fees sdk.Coins) error {
-	return k.BankKeeper.SendCoinsFromModuleToModule(ctx, types.ModuleName, k.feeCollectorName, fees)
+	return k.bankKeeper.SendCoinsFromModuleToModule(ctx, types.ModuleName, k.feeCollectorName, fees)
 }
