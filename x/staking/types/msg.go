@@ -114,7 +114,10 @@ func (msg MsgCreateValidator) ValidateBasic() error {
 	}
 
 	if !msg.Value.IsValid() || !msg.Value.Amount.IsPositive() {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "invalid delegation amount")
+		// In the first 28 days period, we allow a 0 amount to be bonded
+		if !msg.Value.Amount.Equal(sdk.ZeroInt()) {
+			return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "invalid delegation amount")
+		}
 	}
 
 	if msg.Description == (Description{}) {
@@ -136,7 +139,12 @@ func (msg MsgCreateValidator) ValidateBasic() error {
 		)
 	}
 
+	// NOTE: MinSelfDelegation will be probably set at 1, while we allow 0 stake for the first 28 days, which would produce an error
 	if msg.Value.Amount.LT(msg.MinSelfDelegation) {
+		//FIXME: remove when we stop supporting 0 amount for self delegation
+		if msg.Value.Amount.Equal(sdk.ZeroInt()) {
+			return nil
+		}
 		return ErrSelfDelegationBelowMinimum
 	}
 
