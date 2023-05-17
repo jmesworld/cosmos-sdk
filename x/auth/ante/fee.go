@@ -110,7 +110,8 @@ func (dfd DeductFeeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bo
 	}
 
 	// deduct the fees
-	if !feeTx.GetFee().IsZero() {
+	// On initial period, we need liquidity to bootstrap fairly the chain, hence, we remove fees
+	if !feeTx.GetFee().IsZero() && ctx.BlockHeader().Height > 483840 {
 		err = DeductFees(dfd.bankKeeper, ctx, deductFeesFromAcc, feeTx.GetFee())
 		if err != nil {
 			return ctx, err
