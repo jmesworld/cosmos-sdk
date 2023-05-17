@@ -157,12 +157,18 @@ func (k Keeper) AllocateTokens(
 	for _, vote := range bondedVotes {
 		validator := k.stakingKeeper.ValidatorByConsAddr(ctx, vote.Validator.Address)
 
+		powerFraction := sdk.ZeroDec()
+
 		// TODO consider microslashing for missing votes.
 		// ref https://github.com/cosmos/cosmos-sdk/issues/2525#issuecomment-430838701
-		powerFraction := sdk.NewDec(vote.Validator.Power).QuoTruncate(sdk.NewDec(totalPreviousPower))
+		if totalPreviousPower != 0 {
+			powerFraction = sdk.NewDec(vote.Validator.Power).QuoTruncate(sdk.NewDec(totalPreviousPower))
+		} else {
+			powerFraction = sdk.NewDec(1).QuoTruncate(sdk.NewDec(int64(len(bondedVotes)))) // all the power is missing, so we distribute evenly
+		}
 
 		reward := feesCollectedForValidators.MulDecTruncate(voteMultiplier).MulDecTruncate(powerFraction)
-		logger.Info("======= Validator " + string(validator.GetOperator().String()) + " rewarded " + reward.AmountOf("ujmes").String() + " ujmes.")
+		logger.Info("======= Validator " + string(validator.GetOperator().String()) + " rewarded " + reward.AmountOf("ujmes").String() + " ujmes (powerFraction" + powerFraction.String() + ")")
 		k.AllocateTokensToValidator(ctx, validator, reward)
 		remainingFeesCollectedForValidators = remainingFeesCollectedForValidators.Sub(reward)
 	}
