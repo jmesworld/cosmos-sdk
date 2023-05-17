@@ -36,10 +36,10 @@ func BeginBlocker(ctx sdk.Context, k keeper.Keeper) {
 	logger.Info("=============== =============== ===============")
 
 	currentSupply := k.GetSupply(ctx, "ujmes").Amount
-	expectedNextSupply := int(sdk.NewInt(currentSupply.Int64()).Add(mintedCoins.AmountOf("ujmes")).Int64())
-	maxSupply := int(params.MaxMintableAmount) * 1e6
-	logger.Info("Prepare to mint", "mintAmount", mintedCoins.AmountOf("ujmes").String(), ".currentSupply", currentSupply, "expectedNextSupply", expectedNextSupply, "maxSupply", maxSupply)
-	if expectedNextSupply <= maxSupply {
+	expectedNextSupply := sdk.NewInt(currentSupply.Int64()).Add(mintedCoins.AmountOf("ujmes")).Uint64()
+	maxMintableAmount := params.GetMaxMintableAmount()
+	logger.Info("Prepare to mint", "mintAmount", mintedCoins.AmountOf("ujmes").String(), ".currentSupply", currentSupply, "expectedNextSupply", expectedNextSupply, "maxSupply", maxMintableAmount)
+	if expectedNextSupply <= maxMintableAmount {
 		err := k.MintCoins(ctx, mintedCoins)
 		if err != nil {
 			panic(err)
