@@ -199,18 +199,18 @@ func (k Keeper) AllocateTokens(
 		// The same validators are paid for a period of 17280 blocks.
 	}
 
-	if blockHeaderHeight > 1 && remainingFeesCollectedForValidators != nil {
-		logger.Info(" ")
-		logger.Info("======= Allocation post-validator rewards ========")
-		logger.Info("======= Available for distribution to faucet " + remainingFeesCollectedForValidators.String())
-
-		faucetAccAddress, err := sdk.AccAddressFromBech32("jmes1g2vaept3rxjvfzyfmem5am5x74n4qygq58jy9v")
-		if err != nil {
-			panic(err)
-		}
-
-		k.AllocateTokensToAddress(ctx, faucetAccAddress, remainingFeesCollectedForValidators)
-	}
+	//if blockHeaderHeight > 1 && remainingFeesCollectedForValidators != nil {
+	//	logger.Info(" ")
+	//	logger.Info("======= Allocation post-validator rewards ========")
+	//	logger.Info("======= Available for distribution to faucet " + remainingFeesCollectedForValidators.String())
+	//
+	//	faucetAccAddress, err := sdk.AccAddressFromBech32("jmes1g2vaept3rxjvfzyfmem5am5x74n4qygq58jy9v")
+	//	if err != nil {
+	//		panic(err)
+	//	}
+	//
+	//	k.AllocateTokensToAddress(ctx, faucetAccAddress, remainingFeesCollectedForValidators)
+	//}
 
 	// allocate community funding
 	// Keep any remaining to community pool.
