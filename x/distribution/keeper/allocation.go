@@ -40,14 +40,19 @@ func (k Keeper) AllocateTokens(
 	// temporary workaround to keep CanWithdrawInvariant happy
 	// general discussions here: https://github.com/cosmos/cosmos-sdk/issues/2906#issuecomment-441867634
 	feePool := k.GetFeePool(ctx)
-	if totalPreviousPower == 0 {
-		feePool.CommunityPool = feePool.CommunityPool.Add(feesCollected...)
-		k.SetFeePool(ctx, feePool)
-		return
-	}
+	//if totalPreviousPower == 0 {
+	//	feePool.CommunityPool = feePool.CommunityPool.Add(feesCollected...)
+	//	k.SetFeePool(ctx, feePool)
+	//	return
+	//}
 
 	// calculate fraction votes
-	previousFractionVotes := sdk.NewDec(sumPreviousPrecommitPower).Quo(sdk.NewDec(totalPreviousPower))
+	previousFractionVotes := sdk.ZeroDec()
+
+	// totalPreviousPower is total power, sumPreviousPrecommitPower is total signing power
+	if totalPreviousPower != 0 {
+		previousFractionVotes = sdk.NewDec(sumPreviousPrecommitPower).Quo(sdk.NewDec(totalPreviousPower))
+	}
 
 	// calculate previous proposer reward
 	baseProposerReward := k.GetBaseProposerReward(ctx)
