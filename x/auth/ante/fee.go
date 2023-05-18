@@ -2,6 +2,7 @@ package ante
 
 import (
 	"fmt"
+	"strings"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -109,9 +110,25 @@ func (dfd DeductFeeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bo
 		return ctx, sdkerrors.Wrapf(sdkerrors.ErrUnknownAddress, "fee payer address: %s does not exist", deductFeesFrom)
 	}
 
-	// deduct the fees
+	messages := tx.GetMsgs()
+
+	hasToPayFee := true
+
 	// On initial period, we need liquidity to bootstrap fairly the chain, hence, we remove fees
-	if !feeTx.GetFee().IsZero() && ctx.BlockHeader().Height > 483840 {
+	// This only applies to withdrawals of the rewards and single purpose transactions
+	if ctx.BlockHeader().Height < 483840 && len(messages) == 1 {
+		// Read first message
+		msg := messages[0]
+		fmt.Printf("msg: %v\n", msg.String())
+		if strings.HasPrefix(msg.String(), "validator_address") {
+			hasToPayFee = false
+		}
+		if strings.HasPrefix(msg.String(), "delegator_address") {
+			hasToPayFee = false
+		}
+	}
+
+	if hasToPayFee {
 		err = DeductFees(dfd.bankKeeper, ctx, deductFeesFromAcc, feeTx.GetFee())
 		if err != nil {
 			return ctx, err
