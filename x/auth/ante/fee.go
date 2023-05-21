@@ -2,11 +2,10 @@ package ante
 
 import (
 	"fmt"
-	"strings"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/x/auth/types"
+	"strings"
 )
 
 // MempoolFeeDecorator will check if the transaction's fee is at least as large
@@ -110,7 +109,12 @@ func (dfd DeductFeeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bo
 		return ctx, sdkerrors.Wrapf(sdkerrors.ErrUnknownAddress, "fee payer address: %s does not exist", deductFeesFrom)
 	}
 
+	fmt.Printf("ctx.BlockHeader().Height: %v\n", ctx.BlockHeader().Height)
+
+	fmt.Printf("tx", tx)
+	fmt.Printf("tx.ValidateBasic(): %v\n", tx.ValidateBasic())
 	messages := tx.GetMsgs()
+	fmt.Printf("len(messages): %v\n", len(messages))
 
 	hasToPayFee := true
 
@@ -119,13 +123,24 @@ func (dfd DeductFeeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bo
 	if ctx.BlockHeader().Height < 483840 && len(messages) == 1 {
 		// Read first message
 		msg := messages[0]
-		fmt.Printf("msg: %v\n", msg.String())
-		if strings.HasPrefix(msg.String(), "validator_address") {
+		fmt.Printf("msg: %v\n", sdk.MsgTypeURL(msg))
+
+		// if type url is /cosmos.distribution.v1beta1.MsgWithdrawDelegatorReward
+		// or /cosmos.distribution.v1beta1.MsgWithdrawValidatorCommission
+
+		if strings.HasPrefix(sdk.MsgTypeURL(msg), "/cosmos.distribution.v1beta1.MsgWithdrawDelegatorReward") {
 			hasToPayFee = false
 		}
-		if strings.HasPrefix(msg.String(), "delegator_address") {
+
+		if strings.HasPrefix(sdk.MsgTypeURL(msg), "/cosmos.distribution.v1beta1.MsgWithdrawValidatorCommission") {
 			hasToPayFee = false
 		}
+		//if strings.HasPrefix(msg.String(), "validator_address") {
+		//	hasToPayFee = false
+		//}
+		//if strings.HasPrefix(msg.String(), "delegator_address") {
+		//	hasToPayFee = false
+		//}
 	}
 
 	if hasToPayFee {
