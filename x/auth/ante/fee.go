@@ -105,9 +105,6 @@ func (dfd DeductFeeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bo
 	}
 
 	deductFeesFromAcc := dfd.ak.GetAccount(ctx, deductFeesFrom)
-	if deductFeesFromAcc == nil {
-		return ctx, sdkerrors.Wrapf(sdkerrors.ErrUnknownAddress, "fee payer address: %s does not exist", deductFeesFrom)
-	}
 
 	fmt.Printf("ctx.BlockHeader().Height: %v\n", ctx.BlockHeader().Height)
 
@@ -135,6 +132,9 @@ func (dfd DeductFeeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bo
 		if strings.HasPrefix(sdk.MsgTypeURL(msg), "/cosmos.distribution.v1beta1.MsgWithdrawValidatorCommission") {
 			hasToPayFee = false
 		}
+		if strings.HasPrefix(sdk.MsgTypeURL(msg), "/cosmos.staking.v1beta1.MsgCreateValidator") {
+			hasToPayFee = false
+		}
 		//if strings.HasPrefix(msg.String(), "validator_address") {
 		//	hasToPayFee = false
 		//}
@@ -144,6 +144,9 @@ func (dfd DeductFeeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bo
 	}
 
 	if hasToPayFee {
+		if deductFeesFromAcc == nil {
+			return ctx, sdkerrors.Wrapf(sdkerrors.ErrUnknownAddress, "fee payer address: %s does not exist", deductFeesFrom)
+		}
 		err = DeductFees(dfd.bankKeeper, ctx, deductFeesFromAcc, feeTx.GetFee())
 		if err != nil {
 			return ctx, err

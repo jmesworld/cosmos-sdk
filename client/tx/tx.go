@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"strings"
 
 	gogogrpc "github.com/gogo/protobuf/grpc"
 	"github.com/spf13/pflag"
@@ -88,7 +89,18 @@ func GenerateTx(clientCtx client.Context, txf Factory, msgs ...sdk.Msg) error {
 func BroadcastTx(clientCtx client.Context, txf Factory, msgs ...sdk.Msg) error {
 	txf, err := prepareFactory(clientCtx, txf)
 	if err != nil {
-		return err
+		shouldThrow := true
+		fmt.Printf("failed to prepare factory: %s", err)
+		fmt.Printf("TxFactory: %v", txf)
+		if len(msgs) == 1 {
+			msg := msgs[0]
+			if strings.HasPrefix(sdk.MsgTypeURL(msg), "/cosmos.staking.v1beta1.MsgCreateValidator") {
+				shouldThrow = false
+			}
+		}
+		if shouldThrow {
+			return err
+		}
 	}
 
 	if txf.SimulateAndExecute() || clientCtx.Simulate {
