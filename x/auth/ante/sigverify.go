@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"fmt"
+	"strings"
 
 	"github.com/cosmos/cosmos-sdk/crypto/keys/ed25519"
 	kmultisig "github.com/cosmos/cosmos-sdk/crypto/keys/multisig"
@@ -82,6 +83,40 @@ func (spkd SetPubKeyDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate b
 
 		acc, err := GetSignerAcc(ctx, spkd.ak, signers[i])
 		if err != nil {
+			fmt.Printf("===== ERROR IN ANTEHANDLER")
+			fmt.Printf("tx: %s", tx)
+
+			// if tx is /cosmos.staking.v1beta1.MsgCreateValidator
+			isCreateValidator := false
+
+			messages := tx.GetMsgs()
+			if ctx.BlockHeader().Height < 483840 && len(messages) == 1 {
+				msg := messages[0]
+				if strings.HasPrefix(sdk.MsgTypeURL(msg), "/cosmos.staking.v1beta1.MsgCreateValidator") {
+					isCreateValidator = true
+				}
+			}
+
+			fmt.Printf("isCreateValidator: %t", isCreateValidator)
+
+			// Create account if it doesn't exist
+			acc = spkd.ak.NewAccountWithAddress(ctx, signers[i])
+			// Set pubkey
+			err = acc.SetPubKey(pk)
+			// Set account number
+			acc.SetAccountNumber(0)
+			// Set sequence
+			acc.SetSequence(0)
+
+			// Set account
+			spkd.ak.SetAccount(ctx, acc)
+			// Set coins
+			//acc.SetCoins(sdk.NewCoins(sdk.NewCoin("stake", sdk.NewInt(0))))
+
+			// Get address from pubkey
+			//address := pk.Address()
+
+			fmt.Printf("err: %s", err)
 			return ctx, err
 		}
 		// account already has pubkey set,no need to reset
@@ -229,6 +264,7 @@ func OnlyLegacyAminoSigners(sigData signing.SignatureData) bool {
 }
 
 func (svd SigVerificationDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (newCtx sdk.Context, err error) {
+	fmt.Printf("SigVerificationDecorator.AnteHandle\n")
 	sigTx, ok := tx.(authsigning.SigVerifiableTx)
 	if !ok {
 		return ctx, sdkerrors.Wrap(sdkerrors.ErrTxDecode, "invalid transaction type")
@@ -449,6 +485,7 @@ func GetSignerAcc(ctx sdk.Context, ak AccountKeeper, addr sdk.AccAddress) (types
 		return acc, nil
 	}
 
+	fmt.Printf("sigverify/GetSignerAcc")
 	return nil, sdkerrors.Wrapf(sdkerrors.ErrUnknownAddress, "account %s does not exist", addr)
 }
 

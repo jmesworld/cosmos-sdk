@@ -132,7 +132,7 @@ func (msg MsgCreateValidator) ValidateBasic() error {
 		return err
 	}
 
-	if !msg.MinSelfDelegation.IsPositive() {
+	if !msg.MinSelfDelegation.IsPositive() && !msg.MinSelfDelegation.Equal(sdk.ZeroInt()) {
 		return sdkerrors.Wrap(
 			sdkerrors.ErrInvalidRequest,
 			"minimum self delegation must be a positive integer",
