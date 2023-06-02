@@ -72,6 +72,10 @@ func (k Keeper) AllocateTokens(
 		logger.Info("No winning grants")
 	} else {
 		logger.Info("WinningGrants", winningGrants)
+
+		//maxGrantableAmount is 50% of the feesCollectedForDAO or 25% of total rewards (including released vesting)
+		maxGrantableAmount := remainingDAOFees.AmountOf("ujmes").Mul(sdk.NewDec(5)).Quo(sdk.NewDec(10))
+
 		// Ranging, getting the value and the address of each winning grants ordered by ratio
 		for _, winningGrant := range winningGrants {
 			// Allocate token to the DAO address
@@ -83,7 +87,11 @@ func (k Keeper) AllocateTokens(
 			distributedWinningGrantCoins := sdk.DecCoins{decCoin}
 
 			var hasEnoughFundToPay = remainingDAOFees.AmountOf("ujmes").GTE(decCoin.Amount)
-			var shouldPay = winningGrant.ExpireAtHeight.Uint64() >= uint64(blockHeaderHeight)
+			var respectMaxGrant = remainingDAOFees.AmountOf("ujmes").LTE(maxGrantableAmount)
+			if !respectMaxGrant {
+				logger.Info("=> Grant amount is too high", "DAO", winningGrant.DAO.String(), "Amount", winningGrant.Amount.String())
+			}
+			var shouldPay = (winningGrant.ExpireAtHeight.Uint64() >= uint64(blockHeaderHeight)) && respectMaxGrant
 
 			logger.Debug("SHOULD PAY ?", "shouldPay", shouldPay, "ExpireAtHeight", winningGrant.ExpireAtHeight.Uint64(), "blockHeaderHeight", uint64(blockHeaderHeight))
 
