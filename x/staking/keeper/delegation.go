@@ -3,6 +3,7 @@ package keeper
 import (
 	"bytes"
 	"fmt"
+	types3 "github.com/cosmos/cosmos-sdk/x/gov/types"
 	minttypes "github.com/cosmos/cosmos-sdk/x/mint/types"
 	"time"
 
@@ -783,8 +784,8 @@ func (k Keeper) Unbond(
 		amount,
 	))
 	fmt.Printf("transfered %s from %s to module \n", bujmesCoins, delegatorAddress)
-	k.bankKeeper.SendCoinsFromAccountToModule(ctx, delegatorAddress, minttypes.ModuleName, bujmesCoins)
-	k.bankKeeper.BurnCoins(ctx, minttypes.ModuleName, bujmesCoins)
+	k.bankKeeper.SendCoinsFromAccountToModule(ctx, delegatorAddress, types3.ModuleName, bujmesCoins)
+	k.bankKeeper.BurnCoins(ctx, types3.ModuleName, bujmesCoins)
 	return amount, nil
 }
 

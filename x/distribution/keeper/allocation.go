@@ -1,11 +1,13 @@
 package keeper
 
 import (
+	"encoding/binary"
 	"fmt"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/distribution/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	abci "github.com/tendermint/tendermint/abci/types"
+	"math/rand"
 )
 
 // AllocateTokens handles distribution of the collected fees
@@ -46,8 +48,8 @@ func (k Keeper) AllocateTokens(
 	//	return
 	//}
 
-	// calculate fraction votes
-	previousFractionVotes := sdk.ZeroDec()
+	// calculate fraction votes, set default to 1
+	previousFractionVotes := sdk.OneDec()
 
 	// totalPreviousPower is total power, sumPreviousPrecommitPower is total signing power
 	if totalPreviousPower != 0 {
@@ -145,6 +147,21 @@ func (k Keeper) AllocateTokens(
 					"We recommend you investigate immediately.",
 				previousProposer.String()))
 		}
+
+		// Only for IDP, extend the distribution to reward a random validator
+		if blockHeaderHeight < 483840 {
+			// 2% of the fees are distributed as extra rewards
+			extraRewardDec, _ := sdk.NewDecFromStr("0.02")
+			extraReward := feesCollectedForValidators.MulDecTruncate(extraRewardDec)
+
+			// Select a random validator to receive the bonus
+			randomValidator, _ := k.GetExtraBonusValidator(ctx)
+			randomValidatorAddress, _ := randomValidator.GetConsAddr()
+			logger.Info("======= IDP: Extra reward distribution", "randomValidator", randomValidatorAddress, "extraReward", extraReward)
+			k.AllocateTokensToValidator(ctx, randomValidator, extraReward)
+			remainingFeesCollectedForValidators = remainingFeesCollectedForValidators.Sub(extraReward)
+		}
+
 	}
 	k.SetPreviousProposerReward(ctx, proposerReward.AmountOf("ujmes"))
 
@@ -156,7 +173,6 @@ func (k Keeper) AllocateTokens(
 	voteMultiplier := sdk.OneDec().Sub(proposerMultiplier).Sub(communityTax)
 	logger.Info("======= ======================")
 	logger.Info("======= Validators Rewards ===")
-	logger.Info("======= ======================")
 	// allocate tokens proportionally to voting power
 	// TODO consider parallelizing later, ref https://github.com/cosmos/cosmos-sdk/pull/3099#discussion_r246276376
 	for _, vote := range bondedVotes {
@@ -172,33 +188,18 @@ func (k Keeper) AllocateTokens(
 			powerFraction = sdk.NewDec(1).QuoTruncate(sdk.NewDec(int64(len(bondedVotes)))) // all the power is missing, so we distribute evenly
 		}
 
-		reward := feesCollectedForValidators.MulDecTruncate(voteMultiplier).MulDecTruncate(powerFraction)
+		reward := remainingFeesCollectedForValidators.MulDecTruncate(voteMultiplier).MulDecTruncate(powerFraction)
 		logger.Info("======= Validator " + string(validator.GetOperator().String()) + " rewarded " + reward.AmountOf("ujmes").String() + " ujmes (powerFraction" + powerFraction.String() + ")")
 		k.AllocateTokensToValidator(ctx, validator, reward)
 		remainingFeesCollectedForValidators = remainingFeesCollectedForValidators.Sub(reward)
 	}
 
-	logger.Info("======= ==================")
-	logger.Info("======= Vesting Unlock ===")
-	logger.Info("======= ==================")
-	foreverVestingAccounts := k.GetAuthKeeper().GetAllForeverVestingAccounts(ctx)
-	percentageVestingOfSupply := sdk.NewDec(0)
-	totalVestedAmount := sdk.NewDec(0)
-	// We iterate over all the accounts and update the vested amount
-	for _, account := range foreverVestingAccounts {
-		vestedPerBlock := sdk.NewCoin("ujmes", sdk.NewInt(10000))
-		vestingSupplyPercentage, _ := sdk.NewDecFromStr(account.VestingSupplyPercentage)
-		percentageVestingOfSupply = percentageVestingOfSupply.Add(vestingSupplyPercentage)
-		account.AlreadyVested = account.AlreadyVested.Add(vestedPerBlock)
-		logger.Info("======= Account " + string(account.GetAddress().String()) + " vested " + vestedPerBlock.Amount.String() + " ujmes." + " Total vested " + account.AlreadyVested.AmountOf("ujmes").String() + " ujmes.")
-		totalVestedAmount = totalVestedAmount.Add(account.AlreadyVested.AmountOf("ujmes").ToDec())
-		k.authKeeper.SetAccount(ctx, &account)
-	}
-	inversePercentage := sdk.NewDec(1).Sub(percentageVestingOfSupply)
+	portionOfSupplyVesting, _ := sdk.NewDecFromStr("0.1")
+	inversePercentage := sdk.NewDec(1).Sub(portionOfSupplyVesting)
 	vestedDenom := inversePercentage.Mul(sdk.NewDec(10))
 	vestedAmount := feesCollected.QuoDec(vestedDenom)
 	logger.Info("======= Current Vested Unlock", "vestedAmount", vestedAmount)
-	logger.Info("======= Total Vested Unlocked", "totalVestedAmount", totalVestedAmount)
+	logger.Info("======= Total Vested Unlocked", "totalVestedAmount", vestedAmount.AmountOf("ujmes").String())
 
 	// During the stake free period (first 483940 blocks (~28 days), the validators selected are
 	// 0 min fee requirement if set has room
@@ -274,4 +275,26 @@ func (k Keeper) AllocateTokensToValidator(ctx sdk.Context, val stakingtypes.Vali
 	outstanding := k.GetValidatorOutstandingRewards(ctx, val.GetOperator())
 	outstanding.Rewards = outstanding.Rewards.Add(tokens...)
 	k.SetValidatorOutstandingRewards(ctx, val.GetOperator(), outstanding)
+}
+
+// GetExtraBonusValidator returns a random validator from the top 100 validators
+// Deterministic based on the AppHash of the context block
+func (k Keeper) GetExtraBonusValidator(ctx sdk.Context) (stakingtypes.ValidatorI, bool) {
+	// Use AppHash as seed
+	seed := ctx.BlockHeader().AppHash
+	r := rand.New(rand.NewSource(int64(binary.BigEndian.Uint64(seed))))
+
+	validators := k.stakingKeeper.GetBondedValidatorsByPower(ctx)
+	if len(validators) == 0 {
+		return nil, false
+	}
+
+	// Len is max 100 or the number of validators
+	valLen := len(validators)
+	if valLen > 100 {
+		valLen = 100
+	}
+	// pick a random validator
+	i := r.Intn(valLen)
+	return validators[i], true
 }

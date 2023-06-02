@@ -1,6 +1,7 @@
 package mint
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/cosmos/cosmos-sdk/telemetry"
@@ -31,9 +32,35 @@ func BeginBlocker(ctx sdk.Context, k keeper.Keeper) {
 	mintedCoins := sdk.NewCoins(mintedCoin)
 
 	logger.Info("=============== =============== ===============")
-	logger.Info("=============== MINTER.BeginBlocker(%v)", "height", ctx.BlockHeader().Height)
-	logger.Info("=============== MINTER.coinbaseReward(%v)", "reward", mintedCoin)
+	logger.Info("=============== MINTER.BeginBlocker", "height", ctx.BlockHeader().Height)
+	logger.Info("=============== MINTER.coinbaseReward", "mintedCoin", mintedCoin)
+
+	divider, _ := sdk.NewDecFromStr("0.9")
+	mintedCoinsDec := mintedCoins.AmountOf("ujmes").ToDec()
+	unlockedVesting := mintedCoinsDec.Quo(divider).RoundInt().Sub(mintedCoinsDec.RoundInt())
+	totalAmount := mintedCoins.AmountOf("ujmes").ToDec().Add(unlockedVesting.ToDec()).RoundInt()
+
+	logger.Info("=============== MINTER.toBeUnlockedVesting", "vestingAmount", unlockedVesting)
+	logger.Info("=============== MINTER.total", "totalAmount", totalAmount)
 	logger.Info("=============== =============== ===============")
+
+	foreverVestingAccounts := k.GetAuthKeeper().GetAllForeverVestingAccounts(ctx)
+	percentageVestingOfSupply := sdk.NewDec(0)
+	totalVestedAmount := sdk.NewDec(0)
+	fmt.Printf("foreverVestingAccounts: %v\n", foreverVestingAccounts)
+	for _, account := range foreverVestingAccounts {
+		vestingSupplyPercentage, _ := sdk.NewDecFromStr(account.VestingSupplyPercentage)
+		vestedForBlock := sdk.NewCoin("ujmes", totalAmount.ToDec().Mul(vestingSupplyPercentage).RoundInt())
+
+		percentageVestingOfSupply = percentageVestingOfSupply.Add(vestingSupplyPercentage)
+		account.AlreadyVested = account.AlreadyVested.Add(vestedForBlock)
+
+		logger.Info("======= Account " + string(account.GetAddress().String()) + " vested  (percentage: " + vestingSupplyPercentage.String() + ") " + vestedForBlock.Amount.String() + " ujmes." + " Total vested " + account.AlreadyVested.AmountOf("ujmes").String() + " ujmes.")
+		totalVestedAmount = totalVestedAmount.Add(account.AlreadyVested.AmountOf("ujmes").ToDec())
+		k.GetAuthKeeper().SetAccount(ctx, &account)
+	}
+
+	logger.Info("======= Percentage Vesting of supply " + percentageVestingOfSupply.String())
 
 	currentSupply := k.GetSupply(ctx, "ujmes").Amount
 	expectedNextSupply := sdk.NewInt(currentSupply.Int64()).Add(mintedCoins.AmountOf("ujmes")).Uint64()
