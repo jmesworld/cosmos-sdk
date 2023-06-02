@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"context"
+	vesting "github.com/cosmos/cosmos-sdk/x/auth/vesting/types"
 	"time"
 
 	metrics "github.com/armon/go-metrics"
