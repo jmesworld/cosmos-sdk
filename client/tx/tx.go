@@ -90,10 +90,11 @@ func BroadcastTx(clientCtx client.Context, txf Factory, msgs ...sdk.Msg) error {
 	txf, err := prepareFactory(clientCtx, txf)
 	if err != nil {
 		shouldThrow := true
-		fmt.Printf("failed to prepare factory: %s", err)
-		fmt.Printf("TxFactory: %v", txf)
 		if len(msgs) == 1 {
 			msg := msgs[0]
+			// During IDP, we want to allow the creation of a validator for 0-stake
+			// Which means that account will not exist yet
+			// So we need to allow the creation of a validator without an account
 			if strings.HasPrefix(sdk.MsgTypeURL(msg), "/cosmos.staking.v1beta1.MsgCreateValidator") {
 				shouldThrow = false
 			}
