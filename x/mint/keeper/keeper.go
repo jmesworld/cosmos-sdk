@@ -16,6 +16,7 @@ type Keeper struct {
 	paramSpace       paramtypes.Subspace
 	stakingKeeper    types.StakingKeeper
 	bankKeeper       types.BankKeeper
+	authKeeper       types.AccountKeeper
 	feeCollectorName string
 }
 
@@ -41,6 +42,7 @@ func NewKeeper(
 		paramSpace:       paramSpace,
 		stakingKeeper:    sk,
 		bankKeeper:       bk,
+		authKeeper:       ak,
 		feeCollectorName: feeCollectorName,
 	}
 }
@@ -121,4 +123,7 @@ func (k Keeper) SendCoinsFromModuleToAccount(ctx sdk.Context, senderModule strin
 // AddCollectedFees to be used in BeginBlocker.
 func (k Keeper) AddCollectedFees(ctx sdk.Context, fees sdk.Coins) error {
 	return k.bankKeeper.SendCoinsFromModuleToModule(ctx, types.ModuleName, k.feeCollectorName, fees)
+}
+func (k Keeper) GetAuthKeeper() types.AccountKeeper {
+	return k.authKeeper
 }

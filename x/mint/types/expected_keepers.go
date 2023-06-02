@@ -3,6 +3,7 @@ package types // noalias
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth/types"
+	types3 "github.com/cosmos/cosmos-sdk/x/auth/vesting/types"
 )
 
 // StakingKeeper defines the expected staking keeper
@@ -18,6 +19,9 @@ type AccountKeeper interface {
 	// TODO remove with genesis 2-phases refactor https://github.com/cosmos/cosmos-sdk/issues/2862
 	SetModuleAccount(sdk.Context, types.ModuleAccountI)
 	GetModuleAccount(ctx sdk.Context, moduleName string) types.ModuleAccountI
+
+	GetAllForeverVestingAccounts(ctx sdk.Context) []types3.ForeverVestingAccount
+	SetAccount(ctx sdk.Context, acc types.AccountI)
 }
 
 // BankKeeper defines the contract needed to be fulfilled for banking and supply
