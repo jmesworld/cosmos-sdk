@@ -25,13 +25,10 @@ func (k Keeper) AllocateTokens(
 	// (and distributed to the previous proposer)
 	feeCollector := k.authKeeper.GetModuleAccount(ctx, k.feeCollectorName)
 	feesCollectedInt := k.bankKeeper.GetAllBalances(ctx, feeCollector.GetAddress())
-	feesCollected := sdk.NewDecCoinsFromCoins(feesCollectedInt...)
+	totalFeesCollected := sdk.NewDecCoinsFromCoins(feesCollectedInt...)
 	blockHeaderHeight := ctx.BlockHeader().Height
 
-	logger.Info("======= ====================")
-	logger.Info("======= Distribution Started ===", "blockheight", blockHeaderHeight)
-	logger.Info("======= Current Supply " + k.bankKeeper.GetSupply(ctx, "ujmes").String() + "ujmes")
-	logger.Info("======= ====================")
+	logger.Info("Distribution started", "blockheight", blockHeaderHeight)
 
 	// transfer collected fees to the distribution module account
 	err := k.bankKeeper.SendCoinsFromModuleToModule(ctx, k.feeCollectorName, types.ModuleName, feesCollectedInt)
@@ -42,11 +39,6 @@ func (k Keeper) AllocateTokens(
 	// temporary workaround to keep CanWithdrawInvariant happy
 	// general discussions here: https://github.com/cosmos/cosmos-sdk/issues/2906#issuecomment-441867634
 	feePool := k.GetFeePool(ctx)
-	//if totalPreviousPower == 0 {
-	//	feePool.CommunityPool = feePool.CommunityPool.Add(feesCollected...)
-	//	k.SetFeePool(ctx, feePool)
-	//	return
-	//}
 
 	// calculate fraction votes, set default to 1
 	previousFractionVotes := sdk.OneDec()
@@ -62,8 +54,11 @@ func (k Keeper) AllocateTokens(
 	proposerMultiplier := baseProposerReward.Add(bonusProposerReward.MulTruncate(previousFractionVotes))
 
 	// Half the value is available for DAO
-	feesCollectedForDAO := feesCollected.MulDecTruncate(sdk.NewDecWithPrec(5, 1))
-	logger.Info("======= DAO Fees Collected", "feesCollectedForDAO", feesCollectedForDAO.String())
+	feesCollectedForDAO := totalFeesCollected.MulDecTruncate(sdk.NewDecWithPrec(5, 1))
+	// The other portion is for our validators
+	totalFeesCollectedForValidators := totalFeesCollected.Sub(feesCollectedForDAO)
+
+	logger.Info("DAO Fees Collected", "feesCollectedForDAO", feesCollectedForDAO.String())
 
 	remainingDAOFees := feesCollectedForDAO
 
@@ -71,7 +66,7 @@ func (k Keeper) AllocateTokens(
 	if winningGrants == nil {
 		logger.Info("No winning grants")
 	} else {
-		logger.Info("WinningGrants", winningGrants)
+		logger.Info("WinningGrants Set", winningGrants)
 
 		//maxGrantableAmount is 50% of the feesCollectedForDAO or 25% of total rewards (including released vesting)
 		maxGrantableAmount := remainingDAOFees.AmountOf("ujmes").Mul(sdk.NewDec(5)).Quo(sdk.NewDec(10))
@@ -93,7 +88,7 @@ func (k Keeper) AllocateTokens(
 			}
 			var shouldPay = (winningGrant.ExpireAtHeight.Uint64() >= uint64(blockHeaderHeight)) && respectMaxGrant
 
-			logger.Debug("SHOULD PAY ?", "shouldPay", shouldPay, "ExpireAtHeight", winningGrant.ExpireAtHeight.Uint64(), "blockHeaderHeight", uint64(blockHeaderHeight))
+			logger.Debug("Prepare for paying", "shouldPay", shouldPay, "ExpireAtHeight", winningGrant.ExpireAtHeight.Uint64(), "blockHeaderHeight", uint64(blockHeaderHeight))
 
 			if hasEnoughFundToPay && shouldPay {
 				k.AllocateTokensToAddress(ctx, winningGrant.DAO, distributedWinningGrantCoins)
@@ -110,22 +105,36 @@ func (k Keeper) AllocateTokens(
 		}
 	}
 
-	// Here we have paid all proposals
-	logger.Info("======= Final unspent DAO Remaining", "distributeDAOValue", remainingDAOFees.String())
+	// Here we have paid all proposals, we add the remaining to the validator rewards
+	totalFeesCollectedForValidators = totalFeesCollectedForValidators.AddCoins(remainingDAOFees)
+	logger.Info("After distribution for DAO, total fee for validator", "unspent DAO Remaining", remainingDAOFees.String(), "totalFeesCollectedForValidators", totalFeesCollectedForValidators.String())
 
-	// After distribution, aning reminding of the feesCollectedForDAO is added below
-	feesCollectedForValidators := feesCollected.Sub(feesCollectedForDAO).AddCoins(remainingDAOFees)
-	remainingFeesCollectedForValidators := feesCollectedForValidators
-	logger.Info("======= feesCollectedForValidators", "feesCollectedForValidators", feesCollectedForValidators.String())
+	// We reward the validators on the portion of the remaining fees, what is not distributed to DAO goes to validators
+	// This means, if not all the DAO funds are distributed, the validators will get more rewards
+	// It increase the incentivization towards quality of the proposals that get funded as the validator get rewarded for
+	// spending time to do that via the proposer reward he get on top of that. Also affect voting delegators.
+	proposerReward := totalFeesCollectedForValidators.MulDecTruncate(proposerMultiplier)
+	k.SetPreviousProposerReward(ctx, proposerReward.AmountOf("ujmes"))
 
-	proposerReward := feesCollectedForValidators.MulDecTruncate(proposerMultiplier)
-	bonusAbsoluteReward := feesCollectedForValidators.MulDecTruncate(bonusProposerReward.MulTruncate(previousFractionVotes))
-	baseAbsoluteReward := feesCollectedForValidators.MulDecTruncate(baseProposerReward.MulTruncate(previousFractionVotes))
+	// We keep track of the remaining value for evenly distribution
+	remainingFeesForValidators := totalFeesCollectedForValidators
 
 	if blockHeaderHeight > 2 {
+		// Only for IDP, first 483840 blocks (~28 days), extend the distribution to reward a random validator.
+		if blockHeaderHeight < 483840 {
+			// 4% of the fees are distributed as extra rewards
+			extraRewardMultiplier, _ := sdk.NewDecFromStr("0.04")
+			extraReward := totalFeesCollectedForValidators.MulDecTruncate(extraRewardMultiplier)
+
+			// Select a random validator to receive the bonus
+			randomValidator, _ := k.GetExtraBonusValidator(ctx)
+			randomValidatorAddress, _ := randomValidator.GetConsAddr()
+			logger.Info("Paying random active validator (IDP period)", "random validator", randomValidatorAddress, "reward", extraReward)
+			k.AllocateTokensToValidator(ctx, randomValidator, extraReward)
+			remainingFeesForValidators = remainingFeesForValidators.Sub(extraReward)
+		}
+
 		previousProposerReward := k.GetPreviousProposerReward(ctx)
-		logger.Info("======= Get Previous Proposer Reward ===", "previousproposerReward", previousProposerReward)
-		logger.Info("======= Current Proposer Reward", "total reward", proposerReward.String(), "base", baseAbsoluteReward.String(), "bonus", bonusAbsoluteReward.String())
 
 		// pay previous proposer
 		proposerValidator := k.stakingKeeper.ValidatorByConsAddr(ctx, previousProposer)
@@ -139,10 +148,10 @@ func (k Keeper) AllocateTokens(
 				),
 			)
 			allocateAmountToPreviousValidator := sdk.DecCoins{sdk.NewDecCoin("ujmes", previousProposerReward.RoundInt())}
-			logger.Info("======= Paying Previous Proposer", "previousProposer", previousProposer, "allocateAmountToPreviousValidator", allocateAmountToPreviousValidator)
+			logger.Info("Paying previous proposer", "proposer", previousProposer, "reward", allocateAmountToPreviousValidator)
 
 			k.AllocateTokensToValidator(ctx, proposerValidator, allocateAmountToPreviousValidator)
-			remainingFeesCollectedForValidators = remainingFeesCollectedForValidators.Sub(proposerReward)
+			remainingFeesForValidators = remainingFeesForValidators.Sub(allocateAmountToPreviousValidator)
 		} else {
 			// previous proposer can be unknown if say, the unbonding period is 1 block, so
 			// e.g. a validator undelegates at block X, it's removed entirely by
@@ -155,32 +164,15 @@ func (k Keeper) AllocateTokens(
 					"We recommend you investigate immediately.",
 				previousProposer.String()))
 		}
-
-		// Only for IDP, extend the distribution to reward a random validator
-		if blockHeaderHeight < 483840 {
-			// 2% of the fees are distributed as extra rewards
-			extraRewardDec, _ := sdk.NewDecFromStr("0.02")
-			extraReward := feesCollectedForValidators.MulDecTruncate(extraRewardDec)
-
-			// Select a random validator to receive the bonus
-			randomValidator, _ := k.GetExtraBonusValidator(ctx)
-			randomValidatorAddress, _ := randomValidator.GetConsAddr()
-			logger.Info("======= IDP: Extra reward distribution", "randomValidator", randomValidatorAddress, "extraReward", extraReward)
-			k.AllocateTokensToValidator(ctx, randomValidator, extraReward)
-			remainingFeesCollectedForValidators = remainingFeesCollectedForValidators.Sub(extraReward)
-		}
-
 	}
-	k.SetPreviousProposerReward(ctx, proposerReward.AmountOf("ujmes"))
-
-	logger.Info("======= DEALING WITH CURRENT REWARD ACCORDINGLY TO REST", "rest", remainingFeesCollectedForValidators.String())
 
 	// calculate fraction allocated to validators
 	// Community tax is set at 0 for jmes-888
 	communityTax := k.GetCommunityTax(ctx)
-	voteMultiplier := sdk.OneDec().Sub(proposerMultiplier).Sub(communityTax)
-	logger.Info("======= ======================")
-	logger.Info("======= Validators Rewards ===")
+	voteMultiplier := sdk.OneDec().Sub(communityTax)
+	logger.Info("Remaining allocated to validators", "remainingFeesForValidators", remainingFeesForValidators.String())
+
+	totalFeesCollectedForValidatorsAfterProposerReward := remainingFeesForValidators
 	// allocate tokens proportionally to voting power
 	// TODO consider parallelizing later, ref https://github.com/cosmos/cosmos-sdk/pull/3099#discussion_r246276376
 	for _, vote := range bondedVotes {
@@ -196,47 +188,27 @@ func (k Keeper) AllocateTokens(
 			powerFraction = sdk.NewDec(1).QuoTruncate(sdk.NewDec(int64(len(bondedVotes)))) // all the power is missing, so we distribute evenly
 		}
 
-		reward := remainingFeesCollectedForValidators.MulDecTruncate(voteMultiplier).MulDecTruncate(powerFraction)
-		logger.Info("======= Validator " + string(validator.GetOperator().String()) + " rewarded " + reward.AmountOf("ujmes").String() + " ujmes (powerFraction" + powerFraction.String() + ")")
-		k.AllocateTokensToValidator(ctx, validator, reward)
-		remainingFeesCollectedForValidators = remainingFeesCollectedForValidators.Sub(reward)
+		validatorUnitReward := totalFeesCollectedForValidatorsAfterProposerReward.MulDecTruncate(voteMultiplier).MulDecTruncate(powerFraction)
+		validatorReward := sdk.DecCoins{sdk.NewDecCoin("ujmes", validatorUnitReward.AmountOf("ujmes").RoundInt())}
+
+		k.AllocateTokensToValidator(ctx, validator, validatorReward)
+		remainingFeesForValidators = remainingFeesForValidators.Sub(validatorReward)
 	}
 
 	portionOfSupplyVesting, _ := sdk.NewDecFromStr("0.1")
 	inversePercentage := sdk.NewDec(1).Sub(portionOfSupplyVesting)
 	vestedDenom := inversePercentage.Mul(sdk.NewDec(10))
-	vestedAmount := feesCollected.QuoDec(vestedDenom)
-	logger.Info("======= Current Vested Unlock", "vestedAmount", vestedAmount)
-	logger.Info("======= Total Vested Unlocked", "totalVestedAmount", vestedAmount.AmountOf("ujmes").String())
-
-	// During the stake free period (first 483940 blocks (~28 days), the validators selected are
-	// 0 min fee requirement if set has room
-	if blockHeaderHeight < 483840 {
-		//logger.Error("Missing handler for stake-free grace period.")
-		// TODO: We need to set up an initial validator blocktime (sort by time).
-		// Based on that we run into a deterministic list the 100 validators that received their daily rewards
-		// THere is 28 daily unique selection.
-		// The same validators are paid for a period of 17280 blocks.
-	}
-
-	//if blockHeaderHeight > 1 && remainingFeesCollectedForValidators != nil {
-	//	logger.Info(" ")
-	//	logger.Info("======= Allocation post-validator rewards ========")
-	//	logger.Info("======= Available for distribution to faucet " + remainingFeesCollectedForValidators.String())
-	//
-	//	faucetAccAddress, err := sdk.AccAddressFromBech32("jmes1g2vaept3rxjvfzyfmem5am5x74n4qygq58jy9v")
-	//	if err != nil {
-	//		panic(err)
-	//	}
-	//
-	//	k.AllocateTokensToAddress(ctx, faucetAccAddress, remainingFeesCollectedForValidators)
-	//}
+	vestedAmount := totalFeesCollected.QuoDec(vestedDenom)
+	logger.Info("Vested Unlocked", "amount", vestedAmount)
 
 	// allocate community funding
 	// Keep any remaining to community pool.
-	feePool.CommunityPool = feePool.CommunityPool.Add(remainingFeesCollectedForValidators...)
-	k.SetFeePool(ctx, feePool)
-	logger.Info("======= Allocated community funding", "value", remainingFeesCollectedForValidators.String())
+	if !remainingFeesForValidators.IsZero() && !remainingFeesForValidators.Empty() {
+		logger.Info("Remaining fees for validators", "value", remainingFeesForValidators.String())
+		feePool.CommunityPool = feePool.CommunityPool.Add(remainingFeesForValidators...)
+		k.SetFeePool(ctx, feePool)
+		logger.Info("Allocated community funding", "value", remainingFeesForValidators.String())
+	}
 }
 
 func (k Keeper) AllocateTokensToAddress(ctx sdk.Context, addr sdk.AccAddress, tokens sdk.DecCoins) {
