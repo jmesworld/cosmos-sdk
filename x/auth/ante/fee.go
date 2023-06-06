@@ -106,13 +106,7 @@ func (dfd DeductFeeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bo
 
 	deductFeesFromAcc := dfd.ak.GetAccount(ctx, deductFeesFrom)
 
-	fmt.Printf("ctx.BlockHeader().Height: %v\n", ctx.BlockHeader().Height)
-
-	fmt.Printf("tx", tx)
-	fmt.Printf("tx.ValidateBasic(): %v\n", tx.ValidateBasic())
 	messages := tx.GetMsgs()
-	fmt.Printf("len(messages): %v\n", len(messages))
-
 	hasToPayFee := true
 
 	// On initial period, we need liquidity to bootstrap fairly the chain, hence, we remove fees
@@ -120,27 +114,18 @@ func (dfd DeductFeeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bo
 	if ctx.BlockHeader().Height < 483840 && len(messages) == 1 {
 		// Read first message
 		msg := messages[0]
-		fmt.Printf("msg: %v\n", sdk.MsgTypeURL(msg))
-
 		// if type url is /cosmos.distribution.v1beta1.MsgWithdrawDelegatorReward
 		// or /cosmos.distribution.v1beta1.MsgWithdrawValidatorCommission
 
 		if strings.HasPrefix(sdk.MsgTypeURL(msg), "/cosmos.distribution.v1beta1.MsgWithdrawDelegatorReward") {
 			hasToPayFee = false
 		}
-
 		if strings.HasPrefix(sdk.MsgTypeURL(msg), "/cosmos.distribution.v1beta1.MsgWithdrawValidatorCommission") {
 			hasToPayFee = false
 		}
 		if strings.HasPrefix(sdk.MsgTypeURL(msg), "/cosmos.staking.v1beta1.MsgCreateValidator") {
 			hasToPayFee = false
 		}
-		//if strings.HasPrefix(msg.String(), "validator_address") {
-		//	hasToPayFee = false
-		//}
-		//if strings.HasPrefix(msg.String(), "delegator_address") {
-		//	hasToPayFee = false
-		//}
 	}
 
 	if hasToPayFee {
