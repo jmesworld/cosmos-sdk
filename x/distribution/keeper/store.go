@@ -35,10 +35,8 @@ func (k Keeper) SetWinningGrants(ctx sdk.Context, winningGrants types.WinningGra
 }
 
 func (k Keeper) GetWinningGrants(ctx sdk.Context) (winningGrants types.WinningGrants) {
-	k.Logger(ctx).Info("Getting winning grants", "winning_grants")
 	store := ctx.KVStore(k.storeKey)
 	b := store.Get(types.WinningGrantsKey)
-	k.Logger(ctx).Info("Getting winning grants b", "winning_grants", b)
 	if b == nil {
 		return nil
 	}
@@ -46,31 +44,8 @@ func (k Keeper) GetWinningGrants(ctx sdk.Context) (winningGrants types.WinningGr
 	if err != nil {
 		return nil
 	}
-	k.Logger(ctx).Info("Getting winning grants", "winning_grants", winningGrants)
 	return winningGrants
 }
-
-//func (k Keeper) GetWinningGrants(ctx sdk.Context) types.WinningGrants {
-//	k.Logger(ctx).Info("Getting winning grants", "winning_grants", k.winningGrants)
-//	store := ctx.KVStore(k.storeKey)
-//	//var winningGrants types.WinningGrants
-//	b := store.Get(types.GetWinningGrantsHeightKey())
-//
-//	//winningGrants = b
-//
-//	//if b == nil {
-//	//	return delAddr
-//	//}
-//
-//	//err := jsonutil.UnmarshalJSONError(bytes.NewReader(b), &winningGrants)
-//	//if err != nil {
-//	//	panic(err)
-//	//}
-//	//err := k.cdc.UnmarshalJSON(b, &winningGrants)
-//	k.cdc.MustUnmarshal(b, &winningGrants)
-//
-//	//return types.WinningGrant.UnmarshalJSON(b, &types.WinningGrants{})
-//}
 
 // delete a delegator withdraw addr
 func (k Keeper) DeleteDelegatorWithdrawAddr(ctx sdk.Context, delAddr, withdrawAddr sdk.AccAddress) {

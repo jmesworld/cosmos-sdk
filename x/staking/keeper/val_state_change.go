@@ -124,6 +124,8 @@ func (k Keeper) ApplyAndReturnValidatorSetUpdates(ctx sdk.Context) (updates []ab
 	iterator := k.ValidatorsPowerStoreIterator(ctx)
 	defer iterator.Close()
 
+	// Length of the validator set.
+
 	for count := 0; iterator.Valid() && count < int(maxValidators); iterator.Next() {
 		// everything that is iterated in this loop is becoming or already a
 		// part of the bonded validator set
@@ -134,13 +136,11 @@ func (k Keeper) ApplyAndReturnValidatorSetUpdates(ctx sdk.Context) (updates []ab
 			panic("should never retrieve a jailed validator from the power store")
 		}
 
-		// if we get to a zero-power validator (which we don't bond),
+		// if we get to a zero-power validator (which we don't bound),
 		// there are no more possible bonded validators
 		if validator.PotentialConsensusPower(k.PowerReduction(ctx)) == 0 {
-			// Display the block height
-			fmt.Printf("ApplyAndReturnValidatorSetUpdates ctx.BlockHeight(): %v\n", ctx.BlockHeight())
-
 			if ctx.BlockHeight() > 483940 {
+				fmt.Printf("End of the IDP period - No more possible validators\n")
 				break
 			}
 		}
@@ -174,7 +174,6 @@ func (k Keeper) ApplyAndReturnValidatorSetUpdates(ctx sdk.Context) (updates []ab
 		newPower := validator.ConsensusPower(powerReduction)
 		newPowerBytes := k.cdc.MustMarshal(&gogotypes.Int64Value{Value: newPower})
 
-		fmt.Printf("ApplyAndReturnValidatorSetUpdates: valAddr=%v, oldPowerBytes=%v, newPowerBytes=%v\n", valAddr, oldPowerBytes, newPowerBytes)
 		// update the validator set if power has changed
 		if !found || !bytes.Equal(oldPowerBytes, newPowerBytes) {
 			updates = append(updates, validator.ABCIValidatorUpdate(powerReduction))
