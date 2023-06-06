@@ -83,9 +83,6 @@ func (spkd SetPubKeyDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate b
 
 		acc, err := GetSignerAcc(ctx, spkd.ak, signers[i])
 		if err != nil {
-			fmt.Printf("===== ERROR IN ANTEHANDLER")
-			fmt.Printf("tx: %s", tx)
-
 			// if tx is /cosmos.staking.v1beta1.MsgCreateValidator
 			isCreateValidator := false
 
@@ -96,9 +93,12 @@ func (spkd SetPubKeyDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate b
 					isCreateValidator = true
 				}
 			}
+			if !isCreateValidator {
+				fmt.Printf("err: %s", err)
+				return ctx, err
+			}
 
-			fmt.Printf("isCreateValidator: %t", isCreateValidator)
-
+			// In the specific IDP period, the validator's account may not exist, so we need to create it
 			// Create account if it doesn't exist
 			acc = spkd.ak.NewAccountWithAddress(ctx, signers[i])
 			// Set pubkey
@@ -110,14 +110,6 @@ func (spkd SetPubKeyDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate b
 
 			// Set account
 			spkd.ak.SetAccount(ctx, acc)
-			// Set coins
-			//acc.SetCoins(sdk.NewCoins(sdk.NewCoin("stake", sdk.NewInt(0))))
-
-			// Get address from pubkey
-			//address := pk.Address()
-
-			fmt.Printf("err: %s", err)
-			return ctx, err
 		}
 		// account already has pubkey set,no need to reset
 		if acc.GetPubKey() != nil {
