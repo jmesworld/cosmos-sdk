@@ -711,10 +711,9 @@ func (k Keeper) Delegate(
 		"bujmes",
 		bondAmt,
 	))
-	fmt.Printf("minting %s\n", bujmesCoins)
 	k.bankKeeper.MintCoins(ctx, minttypes.ModuleName, bujmesCoins)
+	ctx.Logger().Info("Mining voting right", "amount", bujmesCoins, "delegator", delegatorAddress)
 	k.bankKeeper.SendCoinsFromModuleToAccount(ctx, minttypes.ModuleName, delegatorAddress, bujmesCoins)
-	fmt.Printf("transfered %s to %s \n", bujmesCoins, delegatorAddress)
 	return newShares, nil
 }
 
@@ -783,8 +782,8 @@ func (k Keeper) Unbond(
 		"bujmes",
 		amount,
 	))
-	fmt.Printf("transfered %s from %s to module \n", bujmesCoins, delegatorAddress)
 	k.bankKeeper.SendCoinsFromAccountToModule(ctx, delegatorAddress, types3.ModuleName, bujmesCoins)
+	ctx.Logger().Info("Burning voting right", "amount", bujmesCoins, "delegator", delegatorAddress)
 	k.bankKeeper.BurnCoins(ctx, types3.ModuleName, bujmesCoins)
 	return amount, nil
 }
