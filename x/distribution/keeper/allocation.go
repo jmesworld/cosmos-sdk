@@ -74,21 +74,25 @@ func (k Keeper) AllocateTokens(
 		// Ranging, getting the value and the address of each winning grants ordered by ratio
 		for _, winningGrant := range winningGrants {
 			// Allocate token to the DAO address
-			logger.Debug("=> Winning grant", "DAO", winningGrant.DAO.String(), "Amount", winningGrant.Amount.String())
-			decCoin := sdk.NewDecCoinFromDec("ujmes", sdk.Dec(winningGrant.Amount))
-			logger.Debug("=> Winning grant", "DAO", winningGrant.DAO.String(), "AmountDecCoin", decCoin.String())
+			logger.Info("=> Winning grant", "DAO", winningGrant.DAO, "Amount", winningGrant.Amount)
+			//winningGrantAmount := sdk.NewDec(winningGrant.Amount)
+			//winningGrantAmount := sdk.NewDec(winningGrant.Amount)
+			winningGrantAmount := sdk.NewDecFromInt(winningGrant.Amount)
+			decCoin := sdk.NewDecCoinFromDec("ujmes", winningGrantAmount)
+			logger.Info("=> Winning grant", "DAO", winningGrant.DAO, "AmountDecCoin", decCoin.String())
+
+			hasEnoughFundToPay := remainingDAOFees.AmountOf("ujmes").GTE(decCoin.Amount)
+			isLessThanMaxGrant := winningGrantAmount.LTE(maxGrantableAmount)
+
+			if !isLessThanMaxGrant {
+				logger.Info("=> Grant amount is too high", "DAO", winningGrant.DAO, "Amount", winningGrant.Amount)
+			}
+			shouldPay := (winningGrant.ExpireAtHeight.GTE(sdk.NewInt(blockHeaderHeight))) && isLessThanMaxGrant
 
 			// from decCoin to decCoins
 			distributedWinningGrantCoins := sdk.DecCoins{decCoin}
 
-			var hasEnoughFundToPay = remainingDAOFees.AmountOf("ujmes").GTE(decCoin.Amount)
-			var respectMaxGrant = remainingDAOFees.AmountOf("ujmes").LTE(maxGrantableAmount)
-			if !respectMaxGrant {
-				logger.Info("=> Grant amount is too high", "DAO", winningGrant.DAO.String(), "Amount", winningGrant.Amount.String())
-			}
-			var shouldPay = (winningGrant.ExpireAtHeight.Uint64() >= uint64(blockHeaderHeight)) && respectMaxGrant
-
-			logger.Debug("Prepare for paying", "shouldPay", shouldPay, "ExpireAtHeight", winningGrant.ExpireAtHeight.Uint64(), "blockHeaderHeight", uint64(blockHeaderHeight))
+			logger.Info("Prepare for paying", "shouldPay", shouldPay, "ExpireAtHeight", winningGrant.ExpireAtHeight, "blockHeaderHeight", uint64(blockHeaderHeight), "hasEnougth", hasEnoughFundToPay)
 
 			if hasEnoughFundToPay && shouldPay {
 				k.AllocateTokensToAddress(ctx, winningGrant.DAO, distributedWinningGrantCoins)
@@ -96,10 +100,10 @@ func (k Keeper) AllocateTokens(
 				logger.Info("======= DAO Distributing Value to "+winningGrant.DAO.String(), "distributedWinningGrantCoins", distributedWinningGrantCoins.String())
 			} else {
 				if !hasEnoughFundToPay {
-					logger.Info("=> Not enough remaining to distribute to DAO", "DAO", winningGrant.DAO.String(), "Amount", winningGrant.Amount.String())
+					logger.Info("=> Not enough remaining to distribute to DAO", "DAO", winningGrant.DAO, "Amount", winningGrant.Amount.String())
 				}
 				if !shouldPay {
-					logger.Info("=> Grant expired", "DAO", winningGrant.DAO.String(), "Amount", winningGrant.Amount.String())
+					logger.Info("=> Grant expired", "DAO", winningGrant.DAO, "Amount", winningGrant.Amount.String())
 				}
 			}
 		}
@@ -125,13 +129,14 @@ func (k Keeper) AllocateTokens(
 			// 4% of the fees are distributed as extra rewards
 			extraRewardMultiplier, _ := sdk.NewDecFromStr("0.04")
 			extraReward := totalFeesCollectedForValidators.MulDecTruncate(extraRewardMultiplier)
+			allocateRewardToRandomValidator := sdk.DecCoins{sdk.NewDecCoin("ujmes", extraReward.AmountOf("ujmes").TruncateInt())}
 
 			// Select a random validator to receive the bonus
 			randomValidator, _ := k.GetExtraBonusValidator(ctx)
 			randomValidatorAddress, _ := randomValidator.GetConsAddr()
-			logger.Info("Paying random active validator (IDP period)", "random validator", randomValidatorAddress, "reward", extraReward)
-			k.AllocateTokensToValidator(ctx, randomValidator, extraReward)
-			remainingFeesForValidators = remainingFeesForValidators.Sub(extraReward)
+			logger.Info("Paying random active validator (IDP period)", "random validator", randomValidatorAddress, "reward", allocateRewardToRandomValidator)
+			k.AllocateTokensToValidator(ctx, randomValidator, allocateRewardToRandomValidator)
+			remainingFeesForValidators = remainingFeesForValidators.Sub(allocateRewardToRandomValidator)
 		}
 
 		previousProposerReward := k.GetPreviousProposerReward(ctx)
@@ -147,7 +152,7 @@ func (k Keeper) AllocateTokens(
 					sdk.NewAttribute(types.AttributeKeyValidator, proposerValidator.GetOperator().String()),
 				),
 			)
-			allocateAmountToPreviousValidator := sdk.DecCoins{sdk.NewDecCoin("ujmes", previousProposerReward.RoundInt())}
+			allocateAmountToPreviousValidator := sdk.DecCoins{sdk.NewDecCoin("ujmes", previousProposerReward.TruncateInt())}
 			logger.Info("Paying previous proposer", "proposer", previousProposer, "reward", allocateAmountToPreviousValidator)
 
 			k.AllocateTokensToValidator(ctx, proposerValidator, allocateAmountToPreviousValidator)
@@ -189,7 +194,7 @@ func (k Keeper) AllocateTokens(
 		}
 
 		validatorUnitReward := totalFeesCollectedForValidatorsAfterProposerReward.MulDecTruncate(voteMultiplier).MulDecTruncate(powerFraction)
-		validatorReward := sdk.DecCoins{sdk.NewDecCoin("ujmes", validatorUnitReward.AmountOf("ujmes").RoundInt())}
+		validatorReward := sdk.DecCoins{sdk.NewDecCoin("ujmes", validatorUnitReward.AmountOf("ujmes").TruncateInt())}
 
 		k.AllocateTokensToValidator(ctx, validator, validatorReward)
 		remainingFeesForValidators = remainingFeesForValidators.Sub(validatorReward)
@@ -197,9 +202,10 @@ func (k Keeper) AllocateTokens(
 
 	portionOfSupplyVesting, _ := sdk.NewDecFromStr("0.1")
 	inversePercentage := sdk.NewDec(1).Sub(portionOfSupplyVesting)
-	vestedDenom := inversePercentage.Mul(sdk.NewDec(10))
-	vestedAmount := totalFeesCollected.QuoDec(vestedDenom)
-	logger.Info("Vested Unlocked", "amount", vestedAmount)
+	vestedDivider := inversePercentage.Mul(sdk.NewDec(10))
+	vestedAmount, _ := totalFeesCollected.QuoDec(vestedDivider).TruncateDecimal()
+
+	logger.Info("Vested Unlocked", "amount", vestedAmount.AmountOf("ujmes"))
 
 	// allocate community funding
 	// Keep any remaining to community pool.

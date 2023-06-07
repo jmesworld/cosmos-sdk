@@ -40,7 +40,7 @@ func BeginBlocker(ctx sdk.Context, k keeper.Keeper) {
 	totalVestedAmount := sdk.NewDec(0)
 	for _, account := range foreverVestingAccounts {
 		vestingSupplyPercentage, _ := sdk.NewDecFromStr(account.VestingSupplyPercentage)
-		vestedForBlock := sdk.NewCoin("ujmes", totalAmount.ToDec().Mul(vestingSupplyPercentage).RoundInt())
+		vestedForBlock := sdk.NewCoin("ujmes", totalAmount.ToDec().Mul(vestingSupplyPercentage).TruncateInt())
 
 		percentageVestingOfSupply = percentageVestingOfSupply.Add(vestingSupplyPercentage)
 		account.AlreadyVested = account.AlreadyVested.Add(vestedForBlock)
