@@ -68,11 +68,11 @@ func (k Keeper) AllocateTokens(
 	} else {
 		logger.Info("WinningGrants Set", winningGrants)
 
-		//maxGrantableAmount is 50% of the feesCollectedForDAO or 25% of total rewards (including released vesting)
-		maxGrantableAmount := remainingDAOFees.AmountOf("ujmes").Mul(sdk.NewDec(5)).Quo(sdk.NewDec(10))
-
 		// Ranging, getting the value and the address of each winning grants ordered by ratio
 		for _, winningGrant := range winningGrants {
+			// Winning grants has a max cap (i.e : if MaxCap is 125 it is then equal to 12.5%), applies on the total available DAO reward
+			maxGrantableAmount := feesCollectedForDAO.AmountOf("ujmes").Mul(sdk.NewDecFromInt(winningGrant.MaxCap)).Quo(sdk.NewDec(1000))
+
 			// Allocate token to the DAO address
 			logger.Info("=> Winning grant", "DAO", winningGrant.DAO, "Amount", winningGrant.Amount)
 			//winningGrantAmount := sdk.NewDec(winningGrant.Amount)

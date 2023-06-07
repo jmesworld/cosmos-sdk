@@ -14,6 +14,7 @@ type WinningGrant struct {
 	ExpireAtHeight sdk.Int        `json:"expire_at_height"`
 	YesRatio       sdk.Dec        `json:"yes_ratio"`
 	ProposalID     sdk.Int        `json:"proposal_id"`
+	MaxCap         sdk.Int        `json:"max_cap"`
 }
 
 // RawWinningGrant is an intermediate type to help unmarshal JSON
@@ -23,6 +24,7 @@ type RawWinningGrant struct {
 	ExpireAtHeight json.RawMessage `json:"expire_at_height"`
 	YesRatio       string          `json:"yes_ratio"`
 	ProposalID     json.RawMessage `json:"proposal_id"`
+	MaxCap         json.RawMessage `json:"max_cap"`
 }
 
 func (wg *WinningGrant) UnmarshalJSON(b []byte) error {
@@ -43,6 +45,11 @@ func (wg *WinningGrant) UnmarshalJSON(b []byte) error {
 	}
 
 	wg.ExpireAtHeight, err = parseRawInt(raw.ExpireAtHeight)
+	if err != nil {
+		return err
+	}
+
+	wg.MaxCap, err = parseRawInt(raw.MaxCap)
 	if err != nil {
 		return err
 	}
