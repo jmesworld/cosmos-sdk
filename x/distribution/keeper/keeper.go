@@ -3,13 +3,12 @@ package keeper
 import (
 	"fmt"
 
-	"github.com/tendermint/tendermint/libs/log"
-
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/x/distribution/types"
 	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
+	"github.com/tendermint/tendermint/libs/log"
 )
 
 // Keeper of the distribution store
@@ -21,7 +20,8 @@ type Keeper struct {
 	bankKeeper    types.BankKeeper
 	stakingKeeper types.StakingKeeper
 
-	blockedAddrs map[string]bool
+	blockedAddrs  map[string]bool
+	winningGrants []types.WinningGrant
 
 	feeCollectorName string // name of the FeeCollector ModuleAccount
 }
@@ -172,4 +172,11 @@ func (k Keeper) FundCommunityPool(ctx sdk.Context, amount sdk.Coins, sender sdk.
 	k.SetFeePool(ctx, feePool)
 
 	return nil
+}
+
+func (k Keeper) GetAuthKeeper() types.AccountKeeper {
+	return k.authKeeper
+}
+func (k Keeper) GetBankKeeper() types.BankKeeper {
+	return k.bankKeeper
 }

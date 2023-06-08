@@ -3,6 +3,7 @@ package keeper
 import (
 	"bytes"
 	"fmt"
+	minttypes "github.com/cosmos/cosmos-sdk/x/mint/types"
 	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -704,6 +705,15 @@ func (k Keeper) Delegate(
 	// Call the after-modification hook
 	k.AfterDelegationModified(ctx, delegatorAddress, delegation.GetValidatorAddr())
 
+	// Transform bond amount to voting token
+	bujmesCoins := sdk.NewCoins(sdk.NewCoin(
+		"bujmes",
+		bondAmt,
+	))
+	fmt.Printf("minting %s\n", bujmesCoins)
+	k.bankKeeper.MintCoins(ctx, minttypes.ModuleName, bujmesCoins)
+	k.bankKeeper.SendCoinsFromModuleToAccount(ctx, minttypes.ModuleName, delegatorAddress, bujmesCoins)
+	fmt.Printf("transfered %s to %s \n", bujmesCoins, delegatorAddress)
 	return newShares, nil
 }
 
@@ -767,6 +777,14 @@ func (k Keeper) Unbond(
 		k.RemoveValidator(ctx, validator.GetOperator())
 	}
 
+	// Remove and burn voting right relating to those bounded amount
+	bujmesCoins := sdk.NewCoins(sdk.NewCoin(
+		"bujmes",
+		amount,
+	))
+	fmt.Printf("transfered %s from %s to module \n", bujmesCoins, delegatorAddress)
+	k.bankKeeper.SendCoinsFromAccountToModule(ctx, delegatorAddress, minttypes.ModuleName, bujmesCoins)
+	k.bankKeeper.BurnCoins(ctx, minttypes.ModuleName, bujmesCoins)
 	return amount, nil
 }
 
