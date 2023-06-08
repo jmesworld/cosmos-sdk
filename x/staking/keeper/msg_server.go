@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"context"
+	vesting "github.com/cosmos/cosmos-sdk/x/auth/vesting/types"
 	"time"
 
 	metrics "github.com/armon/go-metrics"
@@ -199,6 +200,17 @@ func (k msgServer) Delegate(goCtx context.Context, msg *types.MsgDelegate) (*typ
 	}
 
 	delegatorAddress, err := sdk.AccAddressFromBech32(msg.DelegatorAddress)
+	account := k.authKeeper.GetAccount(ctx, delegatorAddress)
+
+	// if is a delegator account, check if it is a vesting account
+	if account != nil {
+		if _, ok := account.(*vesting.ForeverVestingAccount); ok {
+			return nil, sdkerrors.Wrapf(
+				sdkerrors.ErrInvalidRequest, "delegator account %s is a forever vesting account", delegatorAddress,
+			)
+		}
+	}
+
 	if err != nil {
 		return nil, err
 	}
