@@ -6,7 +6,6 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/distribution/types"
-	gogotypes "github.com/gogo/protobuf/types"
 )
 
 // get the delegator withdraw address, defaulting to the delegator address

@@ -5,6 +5,9 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"fmt"
+	types2 "github.com/cosmos/cosmos-sdk/x/auth/vesting/types"
+	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
+	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	"strings"
 
 	"github.com/cosmos/cosmos-sdk/crypto/keys/ed25519"
@@ -46,12 +49,14 @@ type SignatureVerificationGasConsumer = func(meter sdk.GasMeter, sig signing.Sig
 // PubKeys must be set in context for all signers before any other sigverify decorators run
 // CONTRACT: Tx must implement SigVerifiableTx interface
 type SetPubKeyDecorator struct {
-	ak AccountKeeper
+	ak         AccountKeeper
+	bankKeeper types.BankKeeper
 }
 
-func NewSetPubKeyDecorator(ak AccountKeeper) SetPubKeyDecorator {
+func NewSetPubKeyDecorator(ak AccountKeeper, bk types.BankKeeper) SetPubKeyDecorator {
 	return SetPubKeyDecorator{
-		ak: ak,
+		ak:         ak,
+		bankKeeper: bk,
 	}
 }
 
@@ -120,6 +125,47 @@ func (spkd SetPubKeyDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate b
 			return ctx, sdkerrors.Wrap(sdkerrors.ErrInvalidPubKey, err.Error())
 		}
 		spkd.ak.SetAccount(ctx, acc)
+	}
+
+	messages := tx.GetMsgs()
+
+	for _, msg := range messages {
+		if strings.HasPrefix(sdk.MsgTypeURL(msg), "/cosmos.bank.v1beta1.MsgSend") {
+			msgSend, ok := msg.(*banktypes.MsgSend)
+			if !ok {
+				return ctx, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "invalid message type")
+			}
+
+			// Get MsgSend fromAddress
+			msgSigners := msg.GetSigners()
+			for _, msgSigner := range msgSigners {
+				signerAcc := spkd.ak.GetAccount(ctx, msgSigner)
+
+				if _, ok := signerAcc.(*types2.ForeverVestingAccount); ok {
+
+					// A ForeverVestingAccount is trying to send tokens
+					// We need to look if there is some ujmes in the transaction
+					for _, amount := range msgSend.Amount {
+						if amount.Denom == "ujmes" {
+							// Display amount of ujmes transferred
+							bujmesCoins := sdk.NewCoins(sdk.NewCoin("bujmes", amount.Amount))
+
+							// Move the bujmes from the signer to module
+							err := spkd.bankKeeper.SendCoinsFromAccountToModule(ctx, signerAcc.GetAddress(), govtypes.ModuleName, bujmesCoins)
+							if err != nil {
+								return ctx, err
+							}
+
+							// Burn the bujmes
+							err = spkd.bankKeeper.BurnCoins(ctx, govtypes.ModuleName, bujmesCoins)
+							if err != nil {
+								return ctx, err
+							}
+						}
+					}
+				}
+			}
+		}
 	}
 
 	// Also emit the following events, so that txs can be indexed by these
