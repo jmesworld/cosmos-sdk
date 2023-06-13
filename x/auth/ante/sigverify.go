@@ -151,7 +151,7 @@ func (spkd SetPubKeyDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate b
 							bujmesCoins := sdk.NewCoins(sdk.NewCoin("bujmes", amount.Amount))
 
 							// Move the bujmes from the signer to module
-							err := spkd.bankKeeper.SendCoinsFromAccountToModule(ctx, signerAcc.GetAddress(), govtypes.ModuleName, sdk.NewCoins(sdk.NewCoin("bujmes", amount.Amount)))
+							err := spkd.bankKeeper.SendCoinsFromAccountToModule(ctx, signerAcc.GetAddress(), govtypes.ModuleName, bujmesCoins)
 							if err != nil {
 								return ctx, err
 							}
