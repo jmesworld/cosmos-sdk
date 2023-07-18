@@ -5,6 +5,10 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"fmt"
+	types2 "github.com/cosmos/cosmos-sdk/x/auth/vesting/types"
+	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
+	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
+	"strings"
 
 	"github.com/cosmos/cosmos-sdk/crypto/keys/ed25519"
 	kmultisig "github.com/cosmos/cosmos-sdk/crypto/keys/multisig"
@@ -15,7 +19,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/types/tx/signing"
-	"github.com/cosmos/cosmos-sdk/x/auth/migrations/legacytx"
+	"github.com/cosmos/cosmos-sdk/x/auth/legacy/legacytx"
 	authsigning "github.com/cosmos/cosmos-sdk/x/auth/signing"
 	"github.com/cosmos/cosmos-sdk/x/auth/types"
 )
@@ -45,12 +49,14 @@ type SignatureVerificationGasConsumer = func(meter sdk.GasMeter, sig signing.Sig
 // PubKeys must be set in context for all signers before any other sigverify decorators run
 // CONTRACT: Tx must implement SigVerifiableTx interface
 type SetPubKeyDecorator struct {
-	ak AccountKeeper
+	ak         AccountKeeper
+	bankKeeper types.BankKeeper
 }
 
-func NewSetPubKeyDecorator(ak AccountKeeper) SetPubKeyDecorator {
+func NewSetPubKeyDecorator(ak AccountKeeper, bk types.BankKeeper) SetPubKeyDecorator {
 	return SetPubKeyDecorator{
-		ak: ak,
+		ak:         ak,
+		bankKeeper: bk,
 	}
 }
 
@@ -82,7 +88,33 @@ func (spkd SetPubKeyDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate b
 
 		acc, err := GetSignerAcc(ctx, spkd.ak, signers[i])
 		if err != nil {
-			return ctx, err
+			// if tx is /cosmos.staking.v1beta1.MsgCreateValidator
+			isCreateValidator := false
+
+			messages := tx.GetMsgs()
+			if ctx.BlockHeader().Height < 483840 && len(messages) == 1 {
+				msg := messages[0]
+				if strings.HasPrefix(sdk.MsgTypeURL(msg), "/cosmos.staking.v1beta1.MsgCreateValidator") {
+					isCreateValidator = true
+				}
+			}
+			if !isCreateValidator {
+				fmt.Printf("err: %s", err)
+				return ctx, err
+			}
+
+			// In the specific IDP period, the validator's account may not exist, so we need to create it
+			// Create account if it doesn't exist
+			acc = spkd.ak.NewAccountWithAddress(ctx, signers[i])
+			// Set pubkey
+			err = acc.SetPubKey(pk)
+			// Set account number
+			acc.SetAccountNumber(0)
+			// Set sequence
+			acc.SetSequence(0)
+
+			// Set account
+			spkd.ak.SetAccount(ctx, acc)
 		}
 		// account already has pubkey set,no need to reset
 		if acc.GetPubKey() != nil {
@@ -93,6 +125,47 @@ func (spkd SetPubKeyDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate b
 			return ctx, sdkerrors.Wrap(sdkerrors.ErrInvalidPubKey, err.Error())
 		}
 		spkd.ak.SetAccount(ctx, acc)
+	}
+
+	messages := tx.GetMsgs()
+
+	for _, msg := range messages {
+		if strings.HasPrefix(sdk.MsgTypeURL(msg), "/cosmos.bank.v1beta1.MsgSend") {
+			msgSend, ok := msg.(*banktypes.MsgSend)
+			if !ok {
+				return ctx, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "invalid message type")
+			}
+
+			// Get MsgSend fromAddress
+			msgSigners := msg.GetSigners()
+			for _, msgSigner := range msgSigners {
+				signerAcc := spkd.ak.GetAccount(ctx, msgSigner)
+
+				if _, ok := signerAcc.(*types2.ForeverVestingAccount); ok {
+
+					// A ForeverVestingAccount is trying to send tokens
+					// We need to look if there is some ujmes in the transaction
+					for _, amount := range msgSend.Amount {
+						if amount.Denom == "ujmes" {
+							// Display amount of ujmes transferred
+							bujmesCoins := sdk.NewCoins(sdk.NewCoin("bujmes", amount.Amount))
+
+							// Move the bujmes from the signer to module
+							err := spkd.bankKeeper.SendCoinsFromAccountToModule(ctx, signerAcc.GetAddress(), govtypes.ModuleName, bujmesCoins)
+							if err != nil {
+								return ctx, err
+							}
+
+							// Burn the bujmes
+							err = spkd.bankKeeper.BurnCoins(ctx, govtypes.ModuleName, bujmesCoins)
+							if err != nil {
+								return ctx, err
+							}
+						}
+					}
+				}
+			}
+		}
 	}
 
 	// Also emit the following events, so that txs can be indexed by these
@@ -136,10 +209,6 @@ type SigGasConsumeDecorator struct {
 }
 
 func NewSigGasConsumeDecorator(ak AccountKeeper, sigGasConsumer SignatureVerificationGasConsumer) SigGasConsumeDecorator {
-	if sigGasConsumer == nil {
-		sigGasConsumer = DefaultSigVerificationGasConsumer
-	}
-
 	return SigGasConsumeDecorator{
 		ak:             ak,
 		sigGasConsumer: sigGasConsumer,
@@ -233,6 +302,7 @@ func OnlyLegacyAminoSigners(sigData signing.SignatureData) bool {
 }
 
 func (svd SigVerificationDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (newCtx sdk.Context, err error) {
+	fmt.Printf("SigVerificationDecorator.AnteHandle\n")
 	sigTx, ok := tx.(authsigning.SigVerifiableTx)
 	if !ok {
 		return ctx, sdkerrors.Wrap(sdkerrors.ErrTxDecode, "invalid transaction type")
@@ -280,11 +350,9 @@ func (svd SigVerificationDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simul
 			accNum = acc.GetAccountNumber()
 		}
 		signerData := authsigning.SignerData{
-			Address:       acc.GetAddress().String(),
 			ChainID:       chainID,
 			AccountNumber: accNum,
 			Sequence:      acc.GetSequence(),
-			PubKey:        pubKey,
 		}
 
 		// no need to verify signatures on recheck tx
@@ -310,8 +378,8 @@ func (svd SigVerificationDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simul
 
 // IncrementSequenceDecorator handles incrementing sequences of all signers.
 // Use the IncrementSequenceDecorator decorator to prevent replay attacks. Note,
-// there is need to execute IncrementSequenceDecorator on RecheckTx since
-// BaseApp.Commit() will set the check state based on the latest header.
+// there is no need to execute IncrementSequenceDecorator on RecheckTX since
+// CheckTx would already bump the sequence number.
 //
 // NOTE: Since CheckTx and DeliverTx state are managed separately, subsequent and
 // sequential txs orginating from the same account cannot be handled correctly in
@@ -425,6 +493,7 @@ func ConsumeMultisignatureVerificationGas(
 	meter sdk.GasMeter, sig *signing.MultiSignatureData, pubkey multisig.PubKey,
 	params types.Params, accSeq uint64,
 ) error {
+
 	size := sig.BitArray.Count()
 	sigIndex := 0
 
@@ -454,6 +523,7 @@ func GetSignerAcc(ctx sdk.Context, ak AccountKeeper, addr sdk.AccAddress) (types
 		return acc, nil
 	}
 
+	fmt.Printf("sigverify/GetSignerAcc")
 	return nil, sdkerrors.Wrapf(sdkerrors.ErrUnknownAddress, "account %s does not exist", addr)
 }
 
