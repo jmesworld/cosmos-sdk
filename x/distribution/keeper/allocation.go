@@ -28,6 +28,18 @@ func (k Keeper) AllocateTokens(
 	totalFeesCollected := sdk.NewDecCoinsFromCoins(feesCollectedInt...)
 	blockHeaderHeight := ctx.BlockHeader().Height
 
+	// If we are in IDP, we have a different set of rules
+	// During the Initial Distribution Period (IDP), which include the first 483840 blocks (~28 days -)
+	// the allocation differs in its ruling.
+	// - We extends distribution to reward a random validator (4%)
+	// - We do not distribute to DAOs
+	// After IDP, on the portion of the distribution that is awarded to DAOs but are not claimed (active grants)
+	// We will burn the tokens instead of sending them to the community pool or toward validators.
+	// It create an incentive model where, because of the lack of additional minted tokens
+	// the prior ones have more "values", incentivising the validators to have scrutinity on DAOs.
+	
+	isIDP := blockHeaderHeight <= 483840
+
 	logger.Info("Distribution started", "blockheight", blockHeaderHeight)
 
 	// transfer collected fees to the distribution module account
@@ -110,6 +122,7 @@ func (k Keeper) AllocateTokens(
 	}
 
 	// Here we have paid all proposals, we add the remaining to the validator rewards
+
 	totalFeesCollectedForValidators = totalFeesCollectedForValidators.AddCoins(remainingDAOFees)
 	logger.Info("After distribution for DAO, total fee for validator", "unspent DAO Remaining", remainingDAOFees.String(), "totalFeesCollectedForValidators", totalFeesCollectedForValidators.String())
 
