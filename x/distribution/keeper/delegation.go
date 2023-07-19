@@ -33,7 +33,6 @@ func (k Keeper) initializeDelegation(ctx sdk.Context, val sdk.ValAddress, del sd
 		stake = validator.TokensFromSharesTruncated(delegation.GetShares())
 	}
 
-	fmt.Printf("initializeDelegation: %s, %s, %s, %s\n", val, del, stake, previousPeriod)
 	k.SetDelegatorStartingInfo(ctx, val, del, types.NewDelegatorStartingInfo(previousPeriod, stake, uint64(ctx.BlockHeight())))
 }
 

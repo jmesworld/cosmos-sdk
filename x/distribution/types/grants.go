@@ -1,102 +1,89 @@
 package types
 
 import (
+	"encoding/json"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"strconv"
 )
 
-type WinningGrantExpiration struct {
-	AtTime   int64 `json:"at_time"`
-	AtHeight int64 `json:"at_height"`
-}
 type WinningGrants []WinningGrant
 
 type WinningGrant struct {
-	DAO sdk.AccAddress `json:"dao"`
-	// could be sdk.Uint
-	Amount         sdk.Uint `json:"amount"`
-	ExpireAtHeight sdk.Uint `json:"expire_at_height"`
-	YesRatio       sdk.Dec  `json:"yes_ratio"`
+	DAO            sdk.AccAddress `json:"dao"`
+	Amount         sdk.Int        `json:"amount"`
+	ExpireAtHeight sdk.Int        `json:"expire_at_height"`
+	YesRatio       sdk.Dec        `json:"yes_ratio"`
+	ProposalID     sdk.Int        `json:"proposal_id"`
+	MaxCap         sdk.Int        `json:"max_cap"`
 }
 
-//func (wg *WinningGrants) Marshal() ([]byte, error) {
-//	return ModuleCdc.MarshalJSON(wg)
-//	//TODO implement me
-//	//panic("implement me")
-//}
-//
-//func (wg *WinningGrants) MarshalTo(data []byte) (n int, err error) {
-//	//TODO implement me
-//	panic("implement me")
-//}
-//
-//func (wg *WinningGrants) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-//	//TODO implement me
-//	panic("implement me")
-//}
-//
-//func (wg *WinningGrants) Size() int {
-//	//TODO implement me
-//	panic("implement me")
-//}
-//
-//func (wg *WinningGrants) Unmarshal(data []byte) error {
-//	//TODO implement me
-//	panic("implement me")
-//}
-//
+// RawWinningGrant is an intermediate type to help unmarshal JSON
+type RawWinningGrant struct {
+	DAO            string          `json:"dao"`
+	Amount         json.RawMessage `json:"amount"`
+	ExpireAtHeight json.RawMessage `json:"expire_at_height"`
+	YesRatio       string          `json:"yes_ratio"`
+	ProposalID     json.RawMessage `json:"proposal_id"`
+	MaxCap         json.RawMessage `json:"max_cap"`
+}
 
-//
-//func (wg *WinningGrant) Reset() {
-//	//TODO implement me
-//	panic("implement me")
-//}
-//
-//func (wg *WinningGrant) String() string {
-//	//TODO implement me
-//	panic("implement me")
-//}
-//
-//func (wg *WinningGrant) ProtoMessage() {
-//	//TODO implement me
-//	panic("implement me")
-//}
-//
-//func (wg *WinningGrants) Reset() {
-//	//TODO implement me
-//	panic("implement me")
-//}
-//
-//func (wg *WinningGrants) String() string {
-//	//TODO implement me
-//	panic("implement me")
-//}
-//
-//func (wg *WinningGrants) ProtoMessage() {
-//	//TODO implement me
-//	panic("implement me")
-//}
-//
-//// UnmarshalJSON unmarshals the JSON bytes into a WinningGrants struct
-//func (wgs *WinningGrants) UnmarshalJSON(bz []byte) error {
-//	var wgsJSON WinningGrants
-//	if err := ModuleCdc.UnmarshalJSON(bz, &wgsJSON); err != nil {
-//		return err
-//	}
-//	*wgs = wgsJSON
-//	return nil
-//}
-//
-//func (wg *WinningGrant) UnmarshalJSON(bz []byte) error {
-//	var wgJSON WinningGrant
-//	if err := ModuleCdc.UnmarshalJSON(bz, &wgJSON); err != nil {
-//		return err
-//	}
-//	wg.DAO = wgJSON.DAO
-//	wg.Amount = wgJSON.Amount
-//	wg.Expiration = WinningGrantExpiration{
-//		AtTime:   wgJSON.Expiration.AtTime,
-//		AtHeight: wgJSON.Expiration.AtHeight,
-//	}
-//	wg.YesRatio = wgJSON.YesRatio
-//	return nil
-//}
+func (wg *WinningGrant) UnmarshalJSON(b []byte) error {
+	var raw RawWinningGrant
+	err := json.Unmarshal(b, &raw)
+	if err != nil {
+		return err
+	}
+
+	wg.DAO, err = sdk.AccAddressFromBech32(raw.DAO)
+	if err != nil {
+		return err
+	}
+
+	wg.Amount, err = parseRawInt(raw.Amount)
+	if err != nil {
+		return err
+	}
+
+	wg.ExpireAtHeight, err = parseRawInt(raw.ExpireAtHeight)
+	if err != nil {
+		return err
+	}
+
+	wg.MaxCap, err = parseRawInt(raw.MaxCap)
+	if err != nil {
+		return err
+	}
+
+	yesRatio, err := sdk.NewDecFromStr(raw.YesRatio)
+	if err != nil {
+		return err
+	}
+	wg.YesRatio = yesRatio
+
+	wg.ProposalID, err = parseRawInt(raw.ProposalID)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func parseRawInt(raw json.RawMessage) (sdk.Int, error) {
+	var i int64
+	var s string
+	var err error
+
+	if err = json.Unmarshal(raw, &i); err == nil {
+		return sdk.NewInt(i), nil
+	}
+
+	if err = json.Unmarshal(raw, &s); err != nil {
+		return sdk.Int{}, err
+	}
+
+	if i, err = strconv.ParseInt(s, 10, 64); err != nil {
+		return sdk.Int{}, err
+	}
+
+	return sdk.NewInt(i), nil
+}
