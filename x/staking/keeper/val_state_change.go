@@ -138,7 +138,12 @@ func (k Keeper) ApplyAndReturnValidatorSetUpdates(ctx sdk.Context) (updates []ab
 		// if we get to a zero-power validator (which we don't bond),
 		// there are no more possible bonded validators
 		if validator.PotentialConsensusPower(k.PowerReduction(ctx)) == 0 {
-			break
+			// Display the block height
+			fmt.Printf("ApplyAndReturnValidatorSetUpdates ctx.BlockHeight(): %v\n", ctx.BlockHeight())
+
+			if ctx.BlockHeight() > 483940 {
+				break
+			}
 		}
 
 		// apply the appropriate state change if necessary
@@ -169,7 +174,7 @@ func (k Keeper) ApplyAndReturnValidatorSetUpdates(ctx sdk.Context) (updates []ab
 		oldPowerBytes, found := last[valAddrStr]
 		newPower := validator.ConsensusPower(powerReduction)
 		newPowerBytes := k.cdc.MustMarshal(&gogotypes.Int64Value{Value: newPower})
-
+		fmt.Printf("ApplyAndReturnValidatorSetUpdates: valAddr=%v, oldPowerBytes=%v, newPowerBytes=%v\n", valAddr, oldPowerBytes, newPowerBytes)
 		// update the validator set if power has changed
 		if !found || !bytes.Equal(oldPowerBytes, newPowerBytes) {
 			updates = append(updates, validator.ABCIValidatorUpdate(powerReduction))

@@ -2,9 +2,10 @@ package simulation_test
 
 import (
 	"fmt"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 	"testing"
 
-	"cosmossdk.io/math"
 	"github.com/stretchr/testify/require"
 
 	"github.com/cosmos/cosmos-sdk/types/kv"
@@ -19,7 +20,7 @@ func TestDecodeStore(t *testing.T) {
 
 	dec := simulation.NewDecodeStore(encCfg.Codec)
 
-	minter := types.NewMinter(math.LegacyOneDec(), math.LegacyNewDec(15))
+	minter := types.NewMinter(tmproto.Header{}, sdk.OneDec(), sdk.NewDec(15))
 
 	kvPairs := kv.Pairs{
 		Pairs: []kv.Pair{

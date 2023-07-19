@@ -13,6 +13,8 @@ import (
 func BeginBlocker(ctx sdk.Context, k keeper.Keeper, ic types.InflationCalculationFn) {
 	defer telemetry.ModuleMeasureSince(types.ModuleName, time.Now(), telemetry.MetricKeyBeginBlocker)
 
+	logger := k.Logger(ctx)
+
 	// fetch stored minter & params
 	minter := k.GetMinter(ctx)
 	params := k.GetParams(ctx)
@@ -20,6 +22,7 @@ func BeginBlocker(ctx sdk.Context, k keeper.Keeper, ic types.InflationCalculatio
 	// recalculate inflation rate
 	totalStakingSupply := k.StakingTokenSupply(ctx)
 	bondedRatio := k.BondedRatio(ctx)
+	minter.BlockHeader = ctx.BlockHeader()
 	minter.Inflation = ic(ctx, minter, params, bondedRatio)
 	minter.AnnualProvisions = minter.NextAnnualProvisions(params, totalStakingSupply)
 	k.SetMinter(ctx, minter)
@@ -27,6 +30,37 @@ func BeginBlocker(ctx sdk.Context, k keeper.Keeper, ic types.InflationCalculatio
 	// mint coins, update supply
 	mintedCoin := minter.BlockProvision(params)
 	mintedCoins := sdk.NewCoins(mintedCoin)
+
+	logger.Info("=============== =============== ===============")
+	logger.Info("=============== MINTER.BeginBlocker(%v)", "height", ctx.BlockHeader().Height)
+	logger.Info("=============== MINTER.coinbaseReward(%v)", "reward", mintedCoin)
+	logger.Info("=============== =============== ===============")
+
+	currentSupply := k.GetSupply(ctx, "ujmes").Amount
+
+	expectedNextSupply := sdk.NewInt(currentSupply.Int64()).Add(mintedCoins.AmountOf("ujmes")).Uint64()
+
+	maxMintableAmount := params.GetMaxMintableAmount()
+
+	logger.Info("Prepare to mint", "mintAmount", mintedCoins.AmountOf("ujmes").String(), ".currentSupply", currentSupply, "expectedNextSupply", expectedNextSupply, "maxSupply", maxMintableAmount)
+	if expectedNextSupply <= maxMintableAmount {
+		err := k.MintCoins(ctx, mintedCoins)
+		if err != nil {
+			panic(err)
+		}
+		// send the minted coins to the fee collector account
+		err = k.AddCollectedFees(ctx, mintedCoins)
+		if err != nil {
+			panic(err)
+		}
+
+	} else {
+		logger.Info("Abort minting. ", "total", expectedNextSupply, "would exceed", params.MaxMintableAmount)
+	}
+
+	if mintedCoin.Amount.IsInt64() {
+		defer telemetry.ModuleSetGauge(types.ModuleName, float32(mintedCoin.Amount.Int64()), "minted_tokens")
+	}
 
 	err := k.MintCoins(ctx, mintedCoins)
 	if err != nil {

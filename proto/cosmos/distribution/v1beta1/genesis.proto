@@ -141,4 +141,6 @@ message GenesisState {
 
   // fee_pool defines the validator slash events at genesis.
   repeated ValidatorSlashEventRecord validator_slash_events = 10 [(gogoproto.nullable) = false];
+  // governance_contract_address is the address of the contract
+  string governance_contract_address = 11 [(gogoproto.moretags) = "yaml:\"contract_address\""];
 }

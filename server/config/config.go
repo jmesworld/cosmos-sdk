@@ -251,8 +251,8 @@ func DefaultConfig() *Config {
 			GlobalLabels: [][]string{},
 		},
 		API: APIConfig{
-			Enable:             false,
-			Swagger:            false,
+			Enable:             true,
+			Swagger:            true,
 			Address:            DefaultAPIAddress,
 			MaxOpenConnections: 1000,
 			RPCReadTimeout:     10,

@@ -1,4 +1,4 @@
-package types
+/*package types
 
 import (
 	"errors"
@@ -134,31 +134,5 @@ func validateInflationMin(i interface{}) error {
 	return nil
 }
 
-func validateGoalBonded(i interface{}) error {
-	v, ok := i.(sdk.Dec)
-	if !ok {
-		return fmt.Errorf("invalid parameter type: %T", i)
-	}
 
-	if v.IsNegative() || v.IsZero() {
-		return fmt.Errorf("goal bonded must be positive: %s", v)
-	}
-	if v.GT(math.LegacyOneDec()) {
-		return fmt.Errorf("goal bonded too large: %s", v)
-	}
-
-	return nil
-}
-
-func validateBlocksPerYear(i interface{}) error {
-	v, ok := i.(uint64)
-	if !ok {
-		return fmt.Errorf("invalid parameter type: %T", i)
-	}
-
-	if v == 0 {
-		return fmt.Errorf("blocks per year must be positive: %d", v)
-	}
-
-	return nil
-}
+*/

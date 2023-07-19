@@ -44,6 +44,8 @@ func TestRandomizedGenState(t *testing.T) {
 	dec1, _ := sdk.NewDecFromStr("0.670000000000000000")
 	dec2, _ := sdk.NewDecFromStr("0.200000000000000000")
 	dec3, _ := sdk.NewDecFromStr("0.070000000000000000")
+	dec4, _ := sdk.NewDecFromStr("0.125")
+	dec5, _ := sdk.NewDecFromStr("20")
 
 	require.Equal(t, uint64(6311520), mintGenesis.Params.BlocksPerYear)
 	require.Equal(t, dec1, mintGenesis.Params.GoalBonded)
@@ -55,6 +57,9 @@ func TestRandomizedGenState(t *testing.T) {
 	require.Equal(t, "0.169999926644441493", mintGenesis.Minter.NextInflationRate(mintGenesis.Params, math.LegacyOneDec()).String())
 	require.Equal(t, "0.170000000000000000", mintGenesis.Minter.Inflation.String())
 	require.Equal(t, "0.000000000000000000", mintGenesis.Minter.AnnualProvisions.String())
+	require.Equal(t, dec4, mintGenesis.Params.YearlyReduction)
+	require.Equal(t, dec5, mintGenesis.Params.MintedAmountPerBlock)
+	require.Equal(t, uint64(1000000000), mintGenesis.Params.MaxMintableAmount)
 }
 
 // TestRandomizedGenState tests abnormal scenarios of applying RandomizedGenState.

@@ -2,13 +2,11 @@ package genutil_test
 
 import (
 	"encoding/json"
+	distributiontypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
+	tmtypes "github.com/tendermint/tendermint/types"
 	"os"
 	"path/filepath"
 	"testing"
-
-	"github.com/gogo/protobuf/proto"
-
-	tmtypes "github.com/tendermint/tendermint/types"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	cdctypes "github.com/cosmos/cosmos-sdk/codec/types"
@@ -23,7 +21,7 @@ type doNothingUnmarshalJSON struct {
 	codec.JSONCodec
 }
 
-func (dnj *doNothingUnmarshalJSON) UnmarshalJSON(_ []byte, _ proto.Message) error {
+func (dnj *doNothingUnmarshalJSON) UnmarshalJSON(bz []byte, ptr *[]distributiontypes.WinningGrant) error {
 	return nil
 }
 

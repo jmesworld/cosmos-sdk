@@ -24,6 +24,9 @@ type Keeper struct {
 	// should be the x/gov module account.
 	authority string
 
+	blockedAddrs  map[string]bool
+	winningGrants []types.WinningGrant
+
 	feeCollectorName string // name of the FeeCollector ModuleAccount
 }
 
@@ -179,4 +182,11 @@ func (k Keeper) FundCommunityPool(ctx sdk.Context, amount sdk.Coins, sender sdk.
 	k.SetFeePool(ctx, feePool)
 
 	return nil
+}
+
+func (k Keeper) GetAuthKeeper() types.AccountKeeper {
+	return k.authKeeper
+}
+func (k Keeper) GetBankKeeper() types.BankKeeper {
+	return k.bankKeeper
 }

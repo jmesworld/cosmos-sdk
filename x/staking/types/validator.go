@@ -39,6 +39,7 @@ var (
 var _ ValidatorI = Validator{}
 
 // NewValidator constructs a new Validator
+//
 //nolint:interfacer
 func NewValidator(operator sdk.ValAddress, pubKey cryptotypes.PubKey, description Description) (Validator, error) {
 	pkAny, err := codectypes.NewAnyWithValue(pubKey)
@@ -312,17 +313,26 @@ func (v Validator) InvalidExRate() bool {
 
 // calculate the token worth of provided shares
 func (v Validator) TokensFromShares(shares sdk.Dec) math.LegacyDec {
+	if v.DelegatorShares.IsZero() {
+		return sdk.ZeroDec()
+	}
 	return (shares.MulInt(v.Tokens)).Quo(v.DelegatorShares)
 }
 
 // calculate the token worth of provided shares, truncated
 func (v Validator) TokensFromSharesTruncated(shares sdk.Dec) math.LegacyDec {
+	if v.DelegatorShares.IsZero() {
+		return sdk.ZeroDec()
+	}
 	return (shares.MulInt(v.Tokens)).QuoTruncate(v.DelegatorShares)
 }
 
 // TokensFromSharesRoundUp returns the token worth of provided shares, rounded
 // up.
 func (v Validator) TokensFromSharesRoundUp(shares sdk.Dec) math.LegacyDec {
+	if v.DelegatorShares.IsZero() {
+		return sdk.ZeroDec()
+	}
 	return (shares.MulInt(v.Tokens)).QuoRoundUp(v.DelegatorShares)
 }
 
@@ -416,7 +426,8 @@ func (v Validator) RemoveTokens(tokens math.Int) Validator {
 
 // RemoveDelShares removes delegator shares from a validator.
 // NOTE: because token fractions are left in the valiadator,
-//       the exchange rate of future shares of this validator can increase.
+//
+//	the exchange rate of future shares of this validator can increase.
 func (v Validator) RemoveDelShares(delShares sdk.Dec) (Validator, math.Int) {
 	remainingShares := v.DelegatorShares.Sub(delShares)
 

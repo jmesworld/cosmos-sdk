@@ -105,7 +105,10 @@ func (msg MsgCreateValidator) ValidateBasic() error {
 	}
 
 	if !msg.Value.IsValid() || !msg.Value.Amount.IsPositive() {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "invalid delegation amount")
+		// In the first 28 days period, we allow a 0 amount to be bonded
+		if !msg.Value.Amount.Equal(sdk.ZeroInt()) {
+			return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "invalid delegation amount")
+		}
 	}
 
 	if msg.Description == (Description{}) {
@@ -127,7 +130,12 @@ func (msg MsgCreateValidator) ValidateBasic() error {
 		)
 	}
 
+	// NOTE: MinSelfDelegation will be probably set at 1, while we allow 0 stake for the first 28 days, which would produce an error
 	if msg.Value.Amount.LT(msg.MinSelfDelegation) {
+		//FIXME: remove when we stop supporting 0 amount for self delegation
+		if msg.Value.Amount.Equal(sdk.ZeroInt()) {
+			return nil
+		}
 		return ErrSelfDelegationBelowMinimum
 	}
 
@@ -141,6 +149,7 @@ func (msg MsgCreateValidator) UnpackInterfaces(unpacker codectypes.AnyUnpacker) 
 }
 
 // NewMsgEditValidator creates a new MsgEditValidator instance
+//
 //nolint:interfacer
 func NewMsgEditValidator(valAddr sdk.ValAddress, description Description, newRate *sdk.Dec, newMinSelfDelegation *math.Int) *MsgEditValidator {
 	return &MsgEditValidator{
@@ -196,6 +205,7 @@ func (msg MsgEditValidator) ValidateBasic() error {
 }
 
 // NewMsgDelegate creates a new MsgDelegate instance.
+//
 //nolint:interfacer
 func NewMsgDelegate(delAddr sdk.AccAddress, valAddr sdk.ValAddress, amount sdk.Coin) *MsgDelegate {
 	return &MsgDelegate{
@@ -243,6 +253,7 @@ func (msg MsgDelegate) ValidateBasic() error {
 }
 
 // NewMsgBeginRedelegate creates a new MsgBeginRedelegate instance.
+//
 //nolint:interfacer
 func NewMsgBeginRedelegate(
 	delAddr sdk.AccAddress, valSrcAddr, valDstAddr sdk.ValAddress, amount sdk.Coin,
@@ -296,6 +307,7 @@ func (msg MsgBeginRedelegate) ValidateBasic() error {
 }
 
 // NewMsgUndelegate creates a new MsgUndelegate instance.
+//
 //nolint:interfacer
 func NewMsgUndelegate(delAddr sdk.AccAddress, valAddr sdk.ValAddress, amount sdk.Coin) *MsgUndelegate {
 	return &MsgUndelegate{
@@ -343,6 +355,7 @@ func (msg MsgUndelegate) ValidateBasic() error {
 }
 
 // NewMsgCancelUnbondingDelegation creates a new MsgCancelUnbondingDelegation instance.
+//
 //nolint:interfacer
 func NewMsgCancelUnbondingDelegation(delAddr sdk.AccAddress, valAddr sdk.ValAddress, creationHeight int64, amount sdk.Coin) *MsgCancelUnbondingDelegation {
 	return &MsgCancelUnbondingDelegation{
