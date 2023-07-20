@@ -1,5 +1,6 @@
-/*package types
+package types
 
+/*
 import (
 	"errors"
 	"fmt"
