@@ -1,3 +1,5 @@
+go 1.19
+
 module github.com/cosmos/cosmos-sdk
 
 require (
@@ -193,4 +195,5 @@ retract (
 	// subject to the dragonberry vulnerability
 	[v0.45.0, v0.45.8]
 	// do not use
-	v0.4
+	v0.43.0
+)
