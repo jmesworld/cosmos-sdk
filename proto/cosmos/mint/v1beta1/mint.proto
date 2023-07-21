@@ -3,6 +3,7 @@ package cosmos.mint.v1beta1;
 
 option go_package = "github.com/cosmos/cosmos-sdk/x/mint/types";
 
+import "tendermint/types/types.proto";
 import "gogoproto/gogo.proto";
 import "cosmos_proto/cosmos.proto";
 
@@ -20,6 +21,7 @@ message Minter {
     (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Dec",
     (gogoproto.nullable)   = false
   ];
+  tendermint.types.Header block_header = 3 [(gogoproto.nullable) = false];
 }
 
 // Params defines the parameters for the x/mint module.
