@@ -657,7 +657,7 @@ func (fva ForeverVestingAccount) GetVestedCoins(blockTime time.Time) sdk.Coins {
 
 // GetVestingCoins returns the total number of vesting coins for a ForeverVestingAccount.
 func (fva ForeverVestingAccount) GetVestingCoins(blockTime time.Time) sdk.Coins {
-	return fva.OriginalVesting.Sub(fva.GetVestedCoins(blockTime))
+	return fva.OriginalVesting.Sub(fva.GetVestedCoins(blockTime)[0])
 }
 
 // LockedCoins returns the set of coins that are not spendable (i.e. locked),
