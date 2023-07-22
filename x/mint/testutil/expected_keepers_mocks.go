@@ -10,6 +10,7 @@ import (
 	math "cosmossdk.io/math"
 	types "github.com/cosmos/cosmos-sdk/types"
 	types0 "github.com/cosmos/cosmos-sdk/x/auth/types"
+	types1 "github.com/cosmos/cosmos-sdk/x/auth/vesting/types"
 	gomock "github.com/golang/mock/gomock"
 )
 
@@ -87,6 +88,20 @@ func (m *MockAccountKeeper) EXPECT() *MockAccountKeeperMockRecorder {
 	return m.recorder
 }
 
+// GetAllForeverVestingAccounts mocks base method.
+func (m *MockAccountKeeper) GetAllForeverVestingAccounts(ctx types.Context) []types1.ForeverVestingAccount {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAllForeverVestingAccounts", ctx)
+	ret0, _ := ret[0].([]types1.ForeverVestingAccount)
+	return ret0
+}
+
+// GetAllForeverVestingAccounts indicates an expected call of GetAllForeverVestingAccounts.
+func (mr *MockAccountKeeperMockRecorder) GetAllForeverVestingAccounts(ctx interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllForeverVestingAccounts", reflect.TypeOf((*MockAccountKeeper)(nil).GetAllForeverVestingAccounts), ctx)
+}
+
 // GetModuleAccount mocks base method.
 func (m *MockAccountKeeper) GetModuleAccount(ctx types.Context, moduleName string) types0.ModuleAccountI {
 	m.ctrl.T.Helper()
@@ -113,6 +128,18 @@ func (m *MockAccountKeeper) GetModuleAddress(name string) types.AccAddress {
 func (mr *MockAccountKeeperMockRecorder) GetModuleAddress(name interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetModuleAddress", reflect.TypeOf((*MockAccountKeeper)(nil).GetModuleAddress), name)
+}
+
+// SetAccount mocks base method.
+func (m *MockAccountKeeper) SetAccount(ctx types.Context, acc types0.AccountI) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "SetAccount", ctx, acc)
+}
+
+// SetAccount indicates an expected call of SetAccount.
+func (mr *MockAccountKeeperMockRecorder) SetAccount(ctx, acc interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetAccount", reflect.TypeOf((*MockAccountKeeper)(nil).SetAccount), ctx, acc)
 }
 
 // SetModuleAccount mocks base method.
@@ -148,6 +175,34 @@ func NewMockBankKeeper(ctrl *gomock.Controller) *MockBankKeeper {
 // EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockBankKeeper) EXPECT() *MockBankKeeperMockRecorder {
 	return m.recorder
+}
+
+// GetBalance mocks base method.
+func (m *MockBankKeeper) GetBalance(ctx types.Context, addr types.AccAddress, denom string) types.Coin {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetBalance", ctx, addr, denom)
+	ret0, _ := ret[0].(types.Coin)
+	return ret0
+}
+
+// GetBalance indicates an expected call of GetBalance.
+func (mr *MockBankKeeperMockRecorder) GetBalance(ctx, addr, denom interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBalance", reflect.TypeOf((*MockBankKeeper)(nil).GetBalance), ctx, addr, denom)
+}
+
+// GetSupply mocks base method.
+func (m *MockBankKeeper) GetSupply(ctx types.Context, denom string) types.Coin {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetSupply", ctx, denom)
+	ret0, _ := ret[0].(types.Coin)
+	return ret0
+}
+
+// GetSupply indicates an expected call of GetSupply.
+func (mr *MockBankKeeperMockRecorder) GetSupply(ctx, denom interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSupply", reflect.TypeOf((*MockBankKeeper)(nil).GetSupply), ctx, denom)
 }
 
 // MintCoins mocks base method.
