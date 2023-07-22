@@ -251,7 +251,7 @@ func testListenDeliverTx1(t *testing.T) {
 	// segment the file into the separate gRPC messages and check the correctness of each
 	segments, err := segmentBytes(fileBytes)
 	require.Nil(t, err)
-	require.Equal(t, 5, len(segments))
+	require.Equal(t, 4, len(segments))
 	require.Equal(t, expectedDeliverTxReq1Bytes, segments[0])
 	require.Equal(t, expectedKVPair1, segments[1])
 	require.Equal(t, expectedKVPair2, segments[2])
