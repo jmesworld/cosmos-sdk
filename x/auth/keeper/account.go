@@ -106,3 +106,17 @@ func (ak AccountKeeper) IterateAccounts(ctx sdk.Context, cb func(account types.A
 		}
 	}
 }
+
+// GetAllForeverVestingAccounts returns all ForeverVestingAccounts accounts in the accountKeeper.
+func (ak AccountKeeper) GetAllForeverVestingAccounts(ctx sdk.Context) (accounts []types2.ForeverVestingAccount) {
+	ak.IterateAccounts(ctx, func(acc types.AccountI) (stop bool) {
+		// Read if acc had a original_vesting field
+		foreverVestingAccount, ok := acc.(*types2.ForeverVestingAccount)
+		if ok {
+			accounts = append(accounts, *foreverVestingAccount)
+		}
+		return false
+	})
+
+	return accounts
+}

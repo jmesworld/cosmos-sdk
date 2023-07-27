@@ -96,6 +96,7 @@ func (k Keeper) InitGenesis(ctx sdk.Context, data types.GenesisState) {
 	if !balances.IsEqual(moduleHoldingsInt) {
 		panic(fmt.Sprintf("distribution module balance does not match the module holdings: %s <-> %s", balances, moduleHoldingsInt))
 	}
+	k.SetGovernanceContractAddress(ctx, string(data.GovernanceContractAddress))
 }
 
 // ExportGenesis returns a GenesisState for a given context and keeper.
@@ -184,5 +185,7 @@ func (k Keeper) ExportGenesis(ctx sdk.Context) *types.GenesisState {
 		},
 	)
 
-	return types.NewGenesisState(params, feePool, dwi, pp, outstanding, acc, his, cur, dels, slashes)
+	governanceContractAddress := k.GetGovernanceContractAddress(ctx)
+
+	return types.NewGenesisState(params, feePool, dwi, pp, outstanding, acc, his, cur, dels, slashes, governanceContractAddress)
 }

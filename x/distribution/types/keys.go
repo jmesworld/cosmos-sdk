@@ -41,19 +41,24 @@ const (
 // - 0x08<valAddrLen (1 Byte)><valAddr_Bytes><height>: ValidatorSlashEvent
 //
 // - 0x09: Params
+//
+// - 0x09
+// - 0x10<accAddrLen (1 Byte)><accAddr_Bytes>: sdk.AccAddress
 var (
-	FeePoolKey                        = []byte{0x00} // key for global distribution state
-	ProposerKey                       = []byte{0x01} // key for the proposer operator address
-	ValidatorOutstandingRewardsPrefix = []byte{0x02} // key for outstanding rewards
+	FeePoolKey                           = collections.NewPrefix(0) // key for global distribution state
+	ProposerKey                          = []byte{0x01}             // key for the proposer operator address
+	ValidatorOutstandingRewardsPrefix    = collections.NewPrefix(2) // key for outstanding rewards
+	DelegatorWithdrawAddrPrefix          = collections.NewPrefix(3) // key for delegator withdraw address
+	DelegatorStartingInfoPrefix          = collections.NewPrefix(4) // key for delegator starting info
+	ValidatorHistoricalRewardsPrefix     = collections.NewPrefix(5) // key for historical validators rewards / stake
+	ValidatorCurrentRewardsPrefix        = collections.NewPrefix(6) // key for current validator rewards
+	ValidatorAccumulatedCommissionPrefix = collections.NewPrefix(7) // key for accumulated validator commission
+	ValidatorSlashEventPrefix            = []byte{0x08}             // key for validator slash fraction
+	ParamsKey                            = collections.NewPrefix(9) // key for distribution module params
+	GovernanceContractAddress            = []byte{0x10}             // key for governance contract address
+	WinningGrantsKey                     = []byte{0x11}             // key for winning grants
+	ProposerRewardKey                    = []byte{0x12}             // key for proposer reward
 
-	DelegatorWithdrawAddrPrefix          = []byte{0x03} // key for delegator withdraw address
-	DelegatorStartingInfoPrefix          = []byte{0x04} // key for delegator starting info
-	ValidatorHistoricalRewardsPrefix     = []byte{0x05} // key for historical validators rewards / stake
-	ValidatorCurrentRewardsPrefix        = []byte{0x06} // key for current validator rewards
-	ValidatorAccumulatedCommissionPrefix = []byte{0x07} // key for accumulated validator commission
-	ValidatorSlashEventPrefix            = []byte{0x08} // key for validator slash fraction
-
-	ParamsKey = []byte{0x09} // key for distribution module params
 )
 
 // GetValidatorOutstandingRewardsAddress creates an address from a validator's outstanding rewards key.
@@ -204,6 +209,10 @@ func GetValidatorSlashEventKeyPrefix(v sdk.ValAddress, height uint64) []byte {
 		ValidatorSlashEventPrefix,
 		append(address.MustLengthPrefix(v.Bytes()), heightBz...)...,
 	)
+}
+
+func GetWinningGrantsHeightKey() []byte {
+	return WinningGrantsKey
 }
 
 // GetValidatorSlashEventKey creates the key for a validator's slash fraction.

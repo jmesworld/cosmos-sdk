@@ -3,6 +3,7 @@ package mint
 import (
 	"time"
 
+	"cosmossdk.io/math"
 	"github.com/cosmos/cosmos-sdk/telemetry"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/mint/keeper"
@@ -13,13 +14,24 @@ import (
 func BeginBlocker(ctx sdk.Context, k keeper.Keeper, ic types.InflationCalculationFn) {
 	defer telemetry.ModuleMeasureSince(types.ModuleName, time.Now(), telemetry.MetricKeyBeginBlocker)
 
+	logger := k.Logger(ctx)
+
 	// fetch stored minter & params
 	minter := k.GetMinter(ctx)
 	params := k.GetParams(ctx)
 
 	// recalculate inflation rate
-	totalStakingSupply := k.StakingTokenSupply(ctx)
-	bondedRatio := k.BondedRatio(ctx)
+	totalStakingSupply, err := k.StakingTokenSupply(ctx)
+	if err != nil {
+		return err
+	}
+
+	bondedRatio, err := k.BondedRatio(ctx)
+	if err != nil {
+		return err
+	}
+
+	minter.BlockHeader = ctx.BlockHeader()
 	minter.Inflation = ic(ctx, minter, params, bondedRatio)
 	minter.AnnualProvisions = minter.NextAnnualProvisions(params, totalStakingSupply)
 	k.SetMinter(ctx, minter)
@@ -28,15 +40,48 @@ func BeginBlocker(ctx sdk.Context, k keeper.Keeper, ic types.InflationCalculatio
 	mintedCoin := minter.BlockProvision(params)
 	mintedCoins := sdk.NewCoins(mintedCoin)
 
-	err := k.MintCoins(ctx, mintedCoins)
-	if err != nil {
-		panic(err)
+	divider, _ := math.LegacyNewDecFromStr("0.9")
+	mintedCoinsDec := mintedCoins.AmountOf("ujmes")
+	unlockedVesting := mintedCoinsDec.Quo(math.Int(divider)).Sub(mintedCoinsDec)
+	totalAmount := mintedCoins.AmountOf("ujmes").Add(unlockedVesting)
+	foreverVestingAccounts := k.GetAuthKeeper().GetAllForeverVestingAccounts(ctx)
+	percentageVestingOfSupply := math.LegacyNewDec(0)
+
+	totalVestedAmount := math.LegacyNewDec(0)
+	for _, account := range foreverVestingAccounts {
+		vestingSupplyPercentage, _ := math.LegacyNewDecFromStr(account.VestingSupplyPercentage)
+		vestedForBlock := sdk.NewCoin("ujmes", totalAmount.ToDec().Mul(vestingSupplyPercentage).TruncateInt())
+
+		percentageVestingOfSupply = percentageVestingOfSupply.Add(vestingSupplyPercentage)
+		account.AlreadyVested = account.AlreadyVested.Add(vestedForBlock)
+		totalVestedAmount = totalVestedAmount.Add(account.AlreadyVested.AmountOf("ujmes").ToDec())
+		k.GetAuthKeeper().SetAccount(ctx, &account)
 	}
 
-	// send the minted coins to the fee collector account
-	err = k.AddCollectedFees(ctx, mintedCoins)
-	if err != nil {
-		panic(err)
+	logger.Info("=============== =============== ===============")
+	logger.Info("=============== MINTER.BeginBlocker(%v)", "height", ctx.BlockHeader().Height)
+	logger.Info("=============== MINTER.coinbaseReward(%v)", "reward", mintedCoin)
+	logger.Info("=============== =============== ===============")
+
+	currentSupply := k.GetSupply(ctx, "ujmes").Amount
+	expectedNextSupply := math.NewInt(currentSupply.Int64()).Add(mintedCoins.AmountOf("ujmes")).Uint64()
+
+	maxMintableAmount := params.GetMaxMintableAmount()
+
+	logger.Info("Prepare to mint", "blockheight", ctx.BlockHeight(), "mintAmount", mintedCoins.AmountOf("ujmes").String(), ".currentSupply", currentSupply, "expectedNextSupply", expectedNextSupply, "maxSupply", maxMintableAmount, "unlockedVesting", unlockedVesting)
+	if expectedNextSupply <= maxMintableAmount {
+		err := k.MintCoins(ctx, mintedCoins)
+		if err != nil {
+			panic(err)
+		}
+		// send the minted coins to the fee collector account
+		err = k.AddCollectedFees(ctx, mintedCoins)
+		if err != nil {
+			panic(err)
+		}
+
+	} else {
+		logger.Info("Abort minting. ", "total", expectedNextSupply, "would exceed", params.MaxMintableAmount)
 	}
 
 	if mintedCoin.Amount.IsInt64() {

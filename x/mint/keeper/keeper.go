@@ -18,6 +18,7 @@ type Keeper struct {
 	storeKey         storetypes.StoreKey
 	stakingKeeper    types.StakingKeeper
 	bankKeeper       types.BankKeeper
+	authKeeper       types.AccountKeeper
 	feeCollectorName string
 
 	// the address capable of executing a MsgUpdateParams message. Typically, this
@@ -45,6 +46,7 @@ func NewKeeper(
 		storeKey:         key,
 		stakingKeeper:    sk,
 		bankKeeper:       bk,
+		authKeeper:       ak,
 		feeCollectorName: feeCollectorName,
 		authority:        authority,
 	}
@@ -131,4 +133,22 @@ func (k Keeper) MintCoins(ctx sdk.Context, newCoins sdk.Coins) error {
 // AddCollectedFees to be used in BeginBlocker.
 func (k Keeper) AddCollectedFees(ctx sdk.Context, fees sdk.Coins) error {
 	return k.bankKeeper.SendCoinsFromModuleToModule(ctx, types.ModuleName, k.feeCollectorName, fees)
+}
+
+// GetSupply implements an alias call to the underlying supply keeper's
+// GetSupply to be used in BeginBlocker.
+func (k Keeper) GetSupply(ctx context.Context, denom string) sdk.Coin {
+	return k.bankKeeper.GetSupply(ctx, denom)
+}
+
+func (k Keeper) GetBalance(ctx context.Context, addr sdk.AccAddress, denom string) sdk.Coin {
+	return k.bankKeeper.GetBalance(ctx, addr, denom)
+}
+
+func (k Keeper) SendCoinsFromModuleToAccount(ctx context.Context, senderModule string, recipientAddr sdk.AccAddress, amt sdk.Coins) error {
+	return k.bankKeeper.SendCoinsFromModuleToAccount(ctx, senderModule, recipientAddr, amt)
+}
+
+func (k Keeper) GetAuthKeeper() types.AccountKeeper {
+	return k.authKeeper
 }

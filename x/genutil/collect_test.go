@@ -15,6 +15,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/server"
 	"github.com/cosmos/cosmos-sdk/types"
 	bankexported "github.com/cosmos/cosmos-sdk/x/bank/exported"
+	distributiontypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
 	"github.com/cosmos/cosmos-sdk/x/genutil"
 	gtypes "github.com/cosmos/cosmos-sdk/x/genutil/types"
 )
@@ -23,7 +24,7 @@ type doNothingUnmarshalJSON struct {
 	codec.JSONCodec
 }
 
-func (dnj *doNothingUnmarshalJSON) UnmarshalJSON(_ []byte, _ proto.Message) error {
+func (dnj *doNothingUnmarshalJSON) UnmarshalJSON(bz []byte, ptr *[]distributiontypes.WinningGrant) error {
 	return nil
 }
 
