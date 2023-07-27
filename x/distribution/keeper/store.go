@@ -342,6 +342,7 @@ func (k Keeper) SetValidatorSlashEvent(ctx sdk.Context, val sdk.ValAddress, heig
 }
 
 func (k Keeper) GetWinningGrants(ctx sdk.Context) (winningGrants types.WinningGrants) {
+func (k Keeper) GetWinningGrants(ctx context.Context) (winningGrants types.WinningGrants) {
 	k.Logger(ctx).Info("Getting winning grants", "winning_grants")
 	store := runtime.KVStoreAdapter(k.storeKey)
 	b := store.Get(types.WinningGrantsKey)
