@@ -1,7 +1,6 @@
 package keeper
 
 import (
-	"cosmossdk.io/math"
 	"encoding/json"
 	gogotypes "github.com/cosmos/gogoproto/types"
 
@@ -324,19 +323,19 @@ func (k Keeper) GetValidatorSlashEvent(ctx sdk.Context, val sdk.ValAddress, heig
 	return event, true
 }
 
-// set slash event for height
-func (k Keeper) SetValidatorSlashEvent(ctx sdk.Context, val sdk.ValAddress, height, period uint64, event types.ValidatorSlashEvent) {
+func (k Keeper) SetWinningGrants(ctx sdk.Context, winningGrants types.WinningGrants) {
+	k.Logger(ctx).Info("Setting winning grants", "winning_grants", winningGrants)
 	store := ctx.KVStore(k.storeKey)
-	b := k.cdc.MustMarshal(&event)
-	store.Set(types.GetValidatorSlashEventKey(val, height, period), b)
+	//b := k.(&winningGrants)
+	// marshal the winning grants to JSON
+	b, _ := json.Marshal(winningGrants)
+	k.Logger(ctx).Info("Setting winning grants", "winning_grants", b)
+	//store.Set(types.GetWinningGrantsHeightKey(), b)
+	store.Set(types.WinningGrantsKey, b)
 }
-
 func (k Keeper) GetWinningGrants(ctx sdk.Context) (winningGrants types.WinningGrants) {
-func (k Keeper) GetWinningGrants(ctx context.Context) (winningGrants types.WinningGrants) {
-	k.Logger(ctx).Info("Getting winning grants", "winning_grants")
-	store := runtime.KVStoreAdapter(k.storeKey)
+	store := ctx.KVStore(k.storeKey)
 	b := store.Get(types.WinningGrantsKey)
-	k.Logger(ctx).Info("Getting winning grants b", "winning_grants", b)
 	if b == nil {
 		return nil
 	}
@@ -344,8 +343,14 @@ func (k Keeper) GetWinningGrants(ctx context.Context) (winningGrants types.Winni
 	if err != nil {
 		return nil
 	}
-	k.Logger(ctx).Info("Getting winning grants", "winning_grants", winningGrants)
 	return winningGrants
+}
+
+// set slash event for height
+func (k Keeper) SetValidatorSlashEvent(ctx sdk.Context, val sdk.ValAddress, height, period uint64, event types.ValidatorSlashEvent) {
+	store := ctx.KVStore(k.storeKey)
+	b := k.cdc.MustMarshal(&event)
+	store.Set(types.GetValidatorSlashEventKey(val, height, period), b)
 }
 
 // iterate over slash events between heights, inclusive
@@ -401,4 +406,22 @@ func (k Keeper) DeleteAllValidatorSlashEvents(ctx sdk.Context) {
 	for ; iter.Valid(); iter.Next() {
 		store.Delete(iter.Key())
 	}
+} // GetGovernanceContractAddress returns the governance contract address
+func (k Keeper) GetGovernanceContractAddress(ctx sdk.Context) (address string) {
+	store := ctx.KVStore(k.storeKey)
+	bz := store.Get(types.GovernanceContractAddress)
+	if bz == nil {
+		ctx.Logger().Info("GetGovernanceContractAddress is nil")
+		return ""
+	}
+	addrValue := gogotypes.StringValue{}
+	k.cdc.MustUnmarshal(bz, &addrValue)
+	return addrValue.GetValue()
+}
+
+// SetGovernanceContractAddress sets the governance contract address
+func (k Keeper) SetGovernanceContractAddress(ctx sdk.Context, address string) {
+	store := ctx.KVStore(k.storeKey)
+	bz := k.cdc.MustMarshal(&gogotypes.StringValue{Value: address})
+	store.Set(types.GovernanceContractAddress, bz)
 }

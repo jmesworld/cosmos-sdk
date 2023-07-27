@@ -125,7 +125,7 @@ func SimulateMsgWithdrawDelegatorReward(txConfig client.TxConfig, ak types.Accou
 		r *rand.Rand, app *baseapp.BaseApp, ctx sdk.Context, accs []simtypes.Account, chainID string,
 	) (simtypes.OperationMsg, []simtypes.FutureOperation, error) {
 		simAccount, _ := simtypes.RandomAcc(r, accs)
-		delegations := sk.GetAllDelegatorDelegations(ctx, simAccount.Address)
+		delegations, _ := sk.GetAllDelegatorDelegations(ctx, simAccount.Address)
 		if len(delegations) == 0 {
 			return simtypes.NoOpMsg(types.ModuleName, types.TypeMsgWithdrawDelegatorReward, "number of delegators equal 0"), nil, nil
 		}
@@ -166,7 +166,8 @@ func SimulateMsgWithdrawValidatorCommission(txConfig client.TxConfig, ak types.A
 	return func(
 		r *rand.Rand, app *baseapp.BaseApp, ctx sdk.Context, accs []simtypes.Account, chainID string,
 	) (simtypes.OperationMsg, []simtypes.FutureOperation, error) {
-		validator, ok := testutil.RandSliceElem(r, sk.GetAllValidators(ctx))
+		allValidators, _ := sk.GetAllValidators(ctx)
+		validator, ok := testutil.RandSliceElem(r, allValidators)
 		if !ok {
 			return simtypes.NoOpMsg(types.ModuleName, types.TypeMsgWithdrawValidatorCommission, "random validator is not ok"), nil, nil
 		}

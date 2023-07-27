@@ -137,15 +137,15 @@ func (k Keeper) AddCollectedFees(ctx sdk.Context, fees sdk.Coins) error {
 
 // GetSupply implements an alias call to the underlying supply keeper's
 // GetSupply to be used in BeginBlocker.
-func (k Keeper) GetSupply(ctx context.Context, denom string) sdk.Coin {
+func (k Keeper) GetSupply(ctx sdk.Context, denom string) sdk.Coin {
 	return k.bankKeeper.GetSupply(ctx, denom)
 }
 
-func (k Keeper) GetBalance(ctx context.Context, addr sdk.AccAddress, denom string) sdk.Coin {
+func (k Keeper) GetBalance(ctx sdk.Context, addr sdk.AccAddress, denom string) sdk.Coin {
 	return k.bankKeeper.GetBalance(ctx, addr, denom)
 }
 
-func (k Keeper) SendCoinsFromModuleToAccount(ctx context.Context, senderModule string, recipientAddr sdk.AccAddress, amt sdk.Coins) error {
+func (k Keeper) SendCoinsFromModuleToAccount(ctx sdk.Context, senderModule string, recipientAddr sdk.AccAddress, amt sdk.Coins) error {
 	return k.bankKeeper.SendCoinsFromModuleToAccount(ctx, senderModule, recipientAddr, amt)
 }
 

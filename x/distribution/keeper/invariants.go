@@ -70,7 +70,11 @@ func CanWithdrawInvariant(k Keeper) sdk.Invariant {
 		var remaining sdk.DecCoins
 
 		valDelegationAddrs := make(map[string][]sdk.AccAddress)
-		for _, del := range k.stakingKeeper.GetAllSDKDelegations(ctx) {
+
+		// iterate over all delegations
+		allDelegations, _ := k.stakingKeeper.GetAllSDKDelegations(ctx)
+
+		for _, del := range allDelegations {
 			valAddr := del.GetValidatorAddr().String()
 			valDelegationAddrs[valAddr] = append(valDelegationAddrs[valAddr], del.GetDelegatorAddr())
 		}
@@ -110,7 +114,7 @@ func ReferenceCountInvariant(k Keeper) sdk.Invariant {
 			valCount++
 			return false
 		})
-		dels := k.stakingKeeper.GetAllSDKDelegations(ctx)
+		dels, _ := k.stakingKeeper.GetAllSDKDelegations(ctx)
 		slashCount := uint64(0)
 		k.IterateValidatorSlashEvents(ctx,
 			func(_ sdk.ValAddress, _ uint64, _ types.ValidatorSlashEvent) (stop bool) {

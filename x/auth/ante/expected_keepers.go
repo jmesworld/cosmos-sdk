@@ -3,6 +3,7 @@ package ante
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth/types"
+	"google.golang.org/grpc/encoding"
 )
 
 // AccountKeeper defines the contract needed for AccountKeeper related APIs.
@@ -12,7 +13,7 @@ type AccountKeeper interface {
 	GetAccount(ctx sdk.Context, addr sdk.AccAddress) types.AccountI
 	SetAccount(ctx sdk.Context, acc types.AccountI)
 	GetModuleAddress(moduleName string) sdk.AccAddress
-	AddressCodec() address.Codec
+	AddressCodec() encoding.Codec
 	NewAccountWithAddress(ctx sdk.Context, addr sdk.AccAddress) types.AccountI
 }
 

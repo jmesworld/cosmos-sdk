@@ -51,8 +51,6 @@ type AccountKeeperI interface {
 	// GetModulePermissions fetches per-module account permissions
 	GetModulePermissions() map[string]types.PermissionsForAddress
 
-	// AddressCodec returns the account address codec.
-	AddressCodec() address.Codec
 	// Retrieve all forever vesting account from the store.
 	GetAllForeverVestingAccounts(sdk.Context) []types2.ForeverVestingAccount
 }

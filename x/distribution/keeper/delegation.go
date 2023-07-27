@@ -25,17 +25,15 @@ func (k Keeper) initializeDelegation(ctx sdk.Context, val sdk.ValAddress, del sd
 	// we don't store directly, so multiply delegation shares * (tokens per share)
 	// note: necessary to truncate so we don't allow withdrawing more rewards than owed
 
-	stake := math.LegacyNewDec(0)
+	stake := sdk.NewDec(0)
 
 	// If the blockHeaderHeight is less than 483940 (~28d), we authorize the shares to be 0 for the first 28 days
 	// stake amount will be zero in this case, else stake amount is calculated using validator.TokensFromSharesTruncated
-	if !delegation.GetShares().Equal(math.LegacyZeroDec()) {
+	if !delegation.GetShares().Equal(sdk.ZeroDec()) {
 		stake = validator.TokensFromSharesTruncated(delegation.GetShares())
 	}
 
-	fmt.Printf("initializeDelegation: %s, %s, %s, %s\n", val, del, stake, previousPeriod)
-	sdkCtx := sdk.UnwrapSDKContext(ctx)
-	return k.DelegatorStartingInfo.Set(ctx, collections.Join(val, del), types.NewDelegatorStartingInfo(previousPeriod, stake, uint64(sdkCtx.BlockHeight())))
+	k.SetDelegatorStartingInfo(ctx, val, del, types.NewDelegatorStartingInfo(previousPeriod, stake, uint64(ctx.BlockHeight())))
 }
 
 // calculate the rewards accrued by a delegation between two periods

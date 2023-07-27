@@ -12,7 +12,6 @@ func (k Keeper) InitGenesis(ctx sdk.Context, data types.GenesisState) {
 	var moduleHoldings sdk.DecCoins
 
 	k.SetFeePool(ctx, data.FeePool)
-
 	if err := k.SetParams(ctx, data.Params); err != nil {
 		panic(err)
 	}

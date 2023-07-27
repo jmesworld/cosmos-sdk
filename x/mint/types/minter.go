@@ -93,7 +93,7 @@ func (m Minter) BlockProvision(params Params) sdk.Coin {
 		mintedAmountPerBlock = mintedAmountPerBlock.Sub(reductionAmount)
 	}
 	provisionAmt := mintedAmountPerBlock
-	return sdk.NewCoin(params.MintDenom, provisionAmt)
+	return sdk.NewCoin(params.MintDenom, provisionAmt.TruncateInt())
 }
 
 // BlockPeriodProvision returns the provisions for a block based on the period
@@ -117,6 +117,6 @@ func (m Minter) BlockPeriodProvision(params Params) sdk.Coin {
 		mintedAmountPerBlock = mintedAmountPerBlock.Sub(reductionAmount)
 	}
 	provisionAmt := mintedAmountPerBlock
-	fmt.Println("BlockPeriodProvision: ", sdk.NewCoin(params.MintDenom, provisionAmt))
-	return sdk.NewCoin(params.MintDenom, provisionAmt)
+	fmt.Println("BlockPeriodProvision: ", sdk.NewCoin(params.MintDenom, provisionAmt.TruncateInt()))
+	return sdk.NewCoin(params.MintDenom, provisionAmt.TruncateInt())
 }

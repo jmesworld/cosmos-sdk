@@ -73,8 +73,19 @@ func (spkd SetPubKeyDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate b
 	signers := sigTx.GetSigners()
 
 	for i, pk := range pubkeys {
-		var err error
-		signerStrs[i], err = spkd.ak.AddressCodec().BytesToString(signers[i])
+		// PublicKey was omitted from slice since it has already been set in context
+		if pk == nil {
+			if !simulate {
+				continue
+			}
+			pk = simSecp256k1Pubkey
+		}
+		// Only make check if simulate=false
+		if !simulate && !bytes.Equal(pk.Address(), signers[i]) {
+			return ctx, sdkerrors.Wrapf(sdkerrors.ErrInvalidPubKey,
+				"pubKey does not match signer address %s with signer index: %d", signers[i], i)
+		}
+
 		acc, err := GetSignerAcc(ctx, spkd.ak, signers[i])
 		if err != nil {
 			// if tx is /cosmos.staking.v1beta1.MsgCreateValidator
@@ -105,24 +116,6 @@ func (spkd SetPubKeyDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate b
 			// Set account
 			spkd.ak.SetAccount(ctx, acc)
 		}
-
-		// PublicKey was omitted from slice since it has already been set in context
-		if pk == nil {
-			if !simulate {
-				continue
-			}
-			pk = simSecp256k1Pubkey
-		}
-		// Only make check if simulate=false
-		if !simulate && !bytes.Equal(pk.Address(), signers[i]) {
-			return ctx, sdkerrors.Wrapf(sdkerrors.ErrInvalidPubKey,
-				"pubKey does not match signer address %s with signer index: %d", signers[i], i)
-		}
-
-		acc, err = GetSignerAcc(ctx, spkd.ak, signers[i])
-		if err != nil {
-			return ctx, err
-		}
 		// account already has pubkey set,no need to reset
 		if acc.GetPubKey() != nil {
 			continue
@@ -133,13 +126,14 @@ func (spkd SetPubKeyDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate b
 		}
 		spkd.ak.SetAccount(ctx, acc)
 	}
+
 	messages := tx.GetMsgs()
 
 	for _, msg := range messages {
 		if strings.HasPrefix(sdk.MsgTypeURL(msg), "/cosmos.bank.v1beta1.MsgSend") {
 			msgSend, ok := msg.(*banktypes.MsgSend)
 			if !ok {
-				return ctx, errorsmod.Wrap(sdkerrors.ErrInvalidRequest, "invalid message type")
+				return ctx, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "invalid message type")
 			}
 
 			// Get MsgSend fromAddress
