@@ -164,13 +164,7 @@ func (k Keeper) ApplyAndReturnValidatorSetUpdates(ctx context.Context) (updates 
 		// if we get to a zero-power validator (which we don't bond),
 		// there are no more possible bonded validators
 		if validator.PotentialConsensusPower(k.PowerReduction(ctx)) == 0 {
-			// Display the block height
-			fmt.Printf("ApplyAndReturnValidatorSetUpdates ctx.BlockHeight(): %v\n", ctx.BlockHeight())
-
-			if ctx.BlockHeight() > 483940 {
-				fmt.Printf("End of the IDP period - No more possible validators\n")
-				break
-			}
+			break
 		}
 
 		// apply the appropriate state change if necessary

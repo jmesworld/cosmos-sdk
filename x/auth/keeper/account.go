@@ -2,10 +2,8 @@ package keeper
 
 import (
 	"context"
-	"errors"
-	"github.com/cosmos/cosmos-sdk/x/auth/types"
-
 	"cosmossdk.io/collections"
+	"errors"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	types2 "github.com/cosmos/cosmos-sdk/x/auth/vesting/types"
@@ -86,7 +84,7 @@ func (ak AccountKeeper) IterateAccounts(ctx context.Context, cb func(account sdk
 
 // GetAllForeverVestingAccounts returns all ForeverVestingAccounts accounts in the accountKeeper.
 func (ak AccountKeeper) GetAllForeverVestingAccounts(ctx sdk.Context) (accounts []types2.ForeverVestingAccount) {
-	ak.IterateAccounts(ctx, func(acc types.AccountI) (stop bool) {
+	ak.IterateAccounts(ctx, func(acc sdk.AccountI) (stop bool) {
 		// Read if acc had a original_vesting field
 		foreverVestingAccount, ok := acc.(*types2.ForeverVestingAccount)
 		if ok {

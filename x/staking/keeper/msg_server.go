@@ -250,7 +250,7 @@ func (k msgServer) Delegate(ctx context.Context, msg *types.MsgDelegate) (*types
 	// if is a delegator account, check if it is a vesting account
 	if account != nil {
 		if _, ok := account.(*vesting.ForeverVestingAccount); ok {
-			return nil, sdkerrors.Wrapf(
+			return nil, errorsmod.Wrapf(
 				sdkerrors.ErrInvalidRequest, "delegator account %s is a forever vesting account", delegatorAddress,
 			)
 		}

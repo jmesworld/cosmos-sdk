@@ -5,8 +5,8 @@ import (
 
 	"cosmossdk.io/math"
 
+	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 )
 
 // NewMinter returns a new Minter object with the given inflation and annual
@@ -93,7 +93,7 @@ func (m Minter) BlockProvision(params Params) sdk.Coin {
 		mintedAmountPerBlock = mintedAmountPerBlock.Sub(reductionAmount)
 	}
 	provisionAmt := mintedAmountPerBlock
-	return sdk.NewCoin(params.MintDenom, provisionAmt.TruncateInt())
+	return sdk.NewCoin(params.MintDenom, provisionAmt)
 }
 
 // BlockPeriodProvision returns the provisions for a block based on the period
@@ -117,6 +117,6 @@ func (m Minter) BlockPeriodProvision(params Params) sdk.Coin {
 		mintedAmountPerBlock = mintedAmountPerBlock.Sub(reductionAmount)
 	}
 	provisionAmt := mintedAmountPerBlock
-	fmt.Println("BlockPeriodProvision: ", sdk.NewCoin(params.MintDenom, provisionAmt.TruncateInt()))
-	return sdk.NewCoin(params.MintDenom, provisionAmt.TruncateInt())
+	fmt.Println("BlockPeriodProvision: ", sdk.NewCoin(params.MintDenom, provisionAmt))
+	return sdk.NewCoin(params.MintDenom, provisionAmt)
 }
