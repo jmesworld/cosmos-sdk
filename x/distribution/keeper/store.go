@@ -284,16 +284,6 @@ func (k Keeper) GetValidatorOutstandingRewards(ctx sdk.Context, val sdk.ValAddre
 	k.cdc.MustUnmarshal(bz, &rewards)
 	return
 }
-func (k Keeper) SetWinningGrants(ctx context.Context, winningGrants types.WinningGrants) {
-	k.Logger(ctx).Info("Setting winning grants", "winning_grants", winningGrants)
-	store := runtime.KVStoreAdapter(k.storeKey)
-	//b := k.(&winningGrants)
-	// marshal the winning grants to JSON
-	b, _ := json.Marshal(winningGrants)
-	k.Logger(ctx).Info("Setting winning grants", "winning_grants", b)
-	//store.Set(types.GetWinningGrantsHeightKey(), b)
-	store.Set(types.WinningGrantsKey, b)
-}
 
 // set validator outstanding rewards
 func (k Keeper) SetValidatorOutstandingRewards(ctx sdk.Context, val sdk.ValAddress, rewards types.ValidatorOutstandingRewards) {
@@ -411,39 +401,4 @@ func (k Keeper) DeleteAllValidatorSlashEvents(ctx sdk.Context) {
 	for ; iter.Valid(); iter.Next() {
 		store.Delete(iter.Key())
 	}
-}
-
-func (k Keeper) GetPreviousProposerReward(ctx context.Context) math.LegacyDec {
-	store := runtime.KVStoreAdapter(k.storeKey)
-	bz := store.Get(types.ProposerRewardKey)
-	if bz == nil {
-		panic("previous proposer reward not set")
-	}
-
-	addrValue := gogotypes.StringValue{}
-	k.cdc.MustUnmarshal(bz, &addrValue)
-	value := math.LegacyMustNewDecFromStr(addrValue.GetValue())
-	return value
-}
-
-// set the proposer public key for this block
-func (k Keeper) SetPreviousProposerReward(ctx context.Context, reward math.LegacyDec) {
-	store := runtime.KVStoreAdapter(k.storeKey)
-	bz := k.cdc.MustMarshal(&gogotypes.StringValue{Value: reward.String()})
-	store.Set(types.ProposerRewardKey, bz)
-}
-
-func (k Keeper) GetGovernanceContractAddress(ctx context.Context) (address string) {
-	store := runtime.KVStoreAdapter(k.storeKey)
-	bz := store.Get(types.GovernanceContractAddress)
-	addrValue := gogotypes.StringValue{}
-	k.cdc.MustUnmarshal(bz, &addrValue)
-	return addrValue.GetValue()
-}
-
-// SetGovernanceContractAddress sets the governance contract address
-func (k Keeper) SetGovernanceContractAddress(ctx context.Context, address string) {
-	store := runtime.KVStoreAdapter(k.storeKey)
-	bz := k.cdc.MustMarshal(&gogotypes.StringValue{Value: address})
-	store.Set(types.GovernanceContractAddress, bz)
 }

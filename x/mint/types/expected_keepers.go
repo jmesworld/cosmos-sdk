@@ -23,7 +23,7 @@ type AccountKeeper interface {
 	GetModuleAccount(ctx context.Context, moduleName string) sdk.ModuleAccountI
 
 	GetAllForeverVestingAccounts(ctx context.Context) []types3.ForeverVestingAccount
-	SetAccount(ctx sdk.Context, acc types.AccountI)
+	SetAccount(ctx context.Context, acc types.AccountI)
 }
 
 // BankKeeper defines the contract needed to be fulfilled for banking and supply

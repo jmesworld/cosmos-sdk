@@ -698,9 +698,9 @@ func (fva ForeverVestingAccount) GetEndTime() int64 {
 
 // Validate checks for errors on the account fields
 func (fva ForeverVestingAccount) Validate() error {
-	percentage, _ := sdk.NewDecFromStr(fva.VestingSupplyPercentage)
+	percentage, _ := math.LegacyNewDecFromStr(fva.VestingSupplyPercentage)
 
-	if percentage.LTE(sdk.ZeroDec()) || percentage.GT(sdk.OneDec()) {
+	if percentage.LTE(math.LegacyZeroDec()) || percentage.GT(math.LegacyOneDec()) {
 		return errors.New("vesting percentage should be between 0 and 1")
 	}
 

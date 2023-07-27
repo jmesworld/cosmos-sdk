@@ -3,6 +3,7 @@ package mintv1beta1
 
 import (
 	_ "cosmossdk.io/api/amino"
+	types "cosmossdk.io/api/tendermint/types"
 	fmt "fmt"
 	_ "github.com/cosmos/cosmos-proto"
 	runtime "github.com/cosmos/cosmos-proto/runtime"
@@ -19,6 +20,7 @@ var (
 	md_Minter                   protoreflect.MessageDescriptor
 	fd_Minter_inflation         protoreflect.FieldDescriptor
 	fd_Minter_annual_provisions protoreflect.FieldDescriptor
+	fd_Minter_block_header      protoreflect.FieldDescriptor
 )
 
 func init() {
@@ -26,6 +28,7 @@ func init() {
 	md_Minter = File_cosmos_mint_v1beta1_mint_proto.Messages().ByName("Minter")
 	fd_Minter_inflation = md_Minter.Fields().ByName("inflation")
 	fd_Minter_annual_provisions = md_Minter.Fields().ByName("annual_provisions")
+	fd_Minter_block_header = md_Minter.Fields().ByName("block_header")
 }
 
 var _ protoreflect.Message = (*fastReflection_Minter)(nil)
@@ -105,6 +108,12 @@ func (x *fastReflection_Minter) Range(f func(protoreflect.FieldDescriptor, proto
 			return
 		}
 	}
+	if x.BlockHeader != nil {
+		value := protoreflect.ValueOfMessage(x.BlockHeader.ProtoReflect())
+		if !f(fd_Minter_block_header, value) {
+			return
+		}
+	}
 }
 
 // Has reports whether a field is populated.
@@ -124,6 +133,8 @@ func (x *fastReflection_Minter) Has(fd protoreflect.FieldDescriptor) bool {
 		return x.Inflation != ""
 	case "cosmos.mint.v1beta1.Minter.annual_provisions":
 		return x.AnnualProvisions != ""
+	case "cosmos.mint.v1beta1.Minter.block_header":
+		return x.BlockHeader != nil
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: cosmos.mint.v1beta1.Minter"))
@@ -144,6 +155,8 @@ func (x *fastReflection_Minter) Clear(fd protoreflect.FieldDescriptor) {
 		x.Inflation = ""
 	case "cosmos.mint.v1beta1.Minter.annual_provisions":
 		x.AnnualProvisions = ""
+	case "cosmos.mint.v1beta1.Minter.block_header":
+		x.BlockHeader = nil
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: cosmos.mint.v1beta1.Minter"))
@@ -166,6 +179,9 @@ func (x *fastReflection_Minter) Get(descriptor protoreflect.FieldDescriptor) pro
 	case "cosmos.mint.v1beta1.Minter.annual_provisions":
 		value := x.AnnualProvisions
 		return protoreflect.ValueOfString(value)
+	case "cosmos.mint.v1beta1.Minter.block_header":
+		value := x.BlockHeader
+		return protoreflect.ValueOfMessage(value.ProtoReflect())
 	default:
 		if descriptor.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: cosmos.mint.v1beta1.Minter"))
@@ -190,6 +206,8 @@ func (x *fastReflection_Minter) Set(fd protoreflect.FieldDescriptor, value proto
 		x.Inflation = value.Interface().(string)
 	case "cosmos.mint.v1beta1.Minter.annual_provisions":
 		x.AnnualProvisions = value.Interface().(string)
+	case "cosmos.mint.v1beta1.Minter.block_header":
+		x.BlockHeader = value.Message().Interface().(*types.Header)
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: cosmos.mint.v1beta1.Minter"))
@@ -210,6 +228,11 @@ func (x *fastReflection_Minter) Set(fd protoreflect.FieldDescriptor, value proto
 // Mutable is a mutating operation and unsafe for concurrent use.
 func (x *fastReflection_Minter) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
+	case "cosmos.mint.v1beta1.Minter.block_header":
+		if x.BlockHeader == nil {
+			x.BlockHeader = new(types.Header)
+		}
+		return protoreflect.ValueOfMessage(x.BlockHeader.ProtoReflect())
 	case "cosmos.mint.v1beta1.Minter.inflation":
 		panic(fmt.Errorf("field inflation of message cosmos.mint.v1beta1.Minter is not mutable"))
 	case "cosmos.mint.v1beta1.Minter.annual_provisions":
@@ -231,6 +254,9 @@ func (x *fastReflection_Minter) NewField(fd protoreflect.FieldDescriptor) protor
 		return protoreflect.ValueOfString("")
 	case "cosmos.mint.v1beta1.Minter.annual_provisions":
 		return protoreflect.ValueOfString("")
+	case "cosmos.mint.v1beta1.Minter.block_header":
+		m := new(types.Header)
+		return protoreflect.ValueOfMessage(m.ProtoReflect())
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: cosmos.mint.v1beta1.Minter"))
@@ -308,6 +334,10 @@ func (x *fastReflection_Minter) ProtoMethods() *protoiface.Methods {
 		if l > 0 {
 			n += 1 + l + runtime.Sov(uint64(l))
 		}
+		if x.BlockHeader != nil {
+			l = options.Size(x.BlockHeader)
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
 		if x.unknownFields != nil {
 			n += len(x.unknownFields)
 		}
@@ -336,6 +366,20 @@ func (x *fastReflection_Minter) ProtoMethods() *protoiface.Methods {
 		if x.unknownFields != nil {
 			i -= len(x.unknownFields)
 			copy(dAtA[i:], x.unknownFields)
+		}
+		if x.BlockHeader != nil {
+			encoded, err := options.Marshal(x.BlockHeader)
+			if err != nil {
+				return protoiface.MarshalOutput{
+					NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+					Buf:               input.Buf,
+				}, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(encoded)))
+			i--
+			dAtA[i] = 0x1a
 		}
 		if len(x.AnnualProvisions) > 0 {
 			i -= len(x.AnnualProvisions)
@@ -464,6 +508,42 @@ func (x *fastReflection_Minter) ProtoMethods() *protoiface.Methods {
 				}
 				x.AnnualProvisions = string(dAtA[iNdEx:postIndex])
 				iNdEx = postIndex
+			case 3:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field BlockHeader", wireType)
+				}
+				var msglen int
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					msglen |= int(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				if msglen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + msglen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				if x.BlockHeader == nil {
+					x.BlockHeader = &types.Header{}
+				}
+				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.BlockHeader); err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
+				iNdEx = postIndex
 			default:
 				iNdEx = preIndex
 				skippy, err := runtime.Skip(dAtA[iNdEx:])
@@ -500,13 +580,16 @@ func (x *fastReflection_Minter) ProtoMethods() *protoiface.Methods {
 }
 
 var (
-	md_Params                       protoreflect.MessageDescriptor
-	fd_Params_mint_denom            protoreflect.FieldDescriptor
-	fd_Params_inflation_rate_change protoreflect.FieldDescriptor
-	fd_Params_inflation_max         protoreflect.FieldDescriptor
-	fd_Params_inflation_min         protoreflect.FieldDescriptor
-	fd_Params_goal_bonded           protoreflect.FieldDescriptor
-	fd_Params_blocks_per_year       protoreflect.FieldDescriptor
+	md_Params                         protoreflect.MessageDescriptor
+	fd_Params_mint_denom              protoreflect.FieldDescriptor
+	fd_Params_inflation_rate_change   protoreflect.FieldDescriptor
+	fd_Params_inflation_max           protoreflect.FieldDescriptor
+	fd_Params_inflation_min           protoreflect.FieldDescriptor
+	fd_Params_goal_bonded             protoreflect.FieldDescriptor
+	fd_Params_minted_amount_per_block protoreflect.FieldDescriptor
+	fd_Params_blocks_per_year         protoreflect.FieldDescriptor
+	fd_Params_max_mintable_amount     protoreflect.FieldDescriptor
+	fd_Params_yearly_reduction        protoreflect.FieldDescriptor
 )
 
 func init() {
@@ -517,7 +600,10 @@ func init() {
 	fd_Params_inflation_max = md_Params.Fields().ByName("inflation_max")
 	fd_Params_inflation_min = md_Params.Fields().ByName("inflation_min")
 	fd_Params_goal_bonded = md_Params.Fields().ByName("goal_bonded")
+	fd_Params_minted_amount_per_block = md_Params.Fields().ByName("minted_amount_per_block")
 	fd_Params_blocks_per_year = md_Params.Fields().ByName("blocks_per_year")
+	fd_Params_max_mintable_amount = md_Params.Fields().ByName("max_mintable_amount")
+	fd_Params_yearly_reduction = md_Params.Fields().ByName("yearly_reduction")
 }
 
 var _ protoreflect.Message = (*fastReflection_Params)(nil)
@@ -615,9 +701,27 @@ func (x *fastReflection_Params) Range(f func(protoreflect.FieldDescriptor, proto
 			return
 		}
 	}
+	if x.MintedAmountPerBlock != "" {
+		value := protoreflect.ValueOfString(x.MintedAmountPerBlock)
+		if !f(fd_Params_minted_amount_per_block, value) {
+			return
+		}
+	}
 	if x.BlocksPerYear != uint64(0) {
 		value := protoreflect.ValueOfUint64(x.BlocksPerYear)
 		if !f(fd_Params_blocks_per_year, value) {
+			return
+		}
+	}
+	if x.MaxMintableAmount != uint64(0) {
+		value := protoreflect.ValueOfUint64(x.MaxMintableAmount)
+		if !f(fd_Params_max_mintable_amount, value) {
+			return
+		}
+	}
+	if x.YearlyReduction != "" {
+		value := protoreflect.ValueOfString(x.YearlyReduction)
+		if !f(fd_Params_yearly_reduction, value) {
 			return
 		}
 	}
@@ -646,8 +750,14 @@ func (x *fastReflection_Params) Has(fd protoreflect.FieldDescriptor) bool {
 		return x.InflationMin != ""
 	case "cosmos.mint.v1beta1.Params.goal_bonded":
 		return x.GoalBonded != ""
+	case "cosmos.mint.v1beta1.Params.minted_amount_per_block":
+		return x.MintedAmountPerBlock != ""
 	case "cosmos.mint.v1beta1.Params.blocks_per_year":
 		return x.BlocksPerYear != uint64(0)
+	case "cosmos.mint.v1beta1.Params.max_mintable_amount":
+		return x.MaxMintableAmount != uint64(0)
+	case "cosmos.mint.v1beta1.Params.yearly_reduction":
+		return x.YearlyReduction != ""
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: cosmos.mint.v1beta1.Params"))
@@ -674,8 +784,14 @@ func (x *fastReflection_Params) Clear(fd protoreflect.FieldDescriptor) {
 		x.InflationMin = ""
 	case "cosmos.mint.v1beta1.Params.goal_bonded":
 		x.GoalBonded = ""
+	case "cosmos.mint.v1beta1.Params.minted_amount_per_block":
+		x.MintedAmountPerBlock = ""
 	case "cosmos.mint.v1beta1.Params.blocks_per_year":
 		x.BlocksPerYear = uint64(0)
+	case "cosmos.mint.v1beta1.Params.max_mintable_amount":
+		x.MaxMintableAmount = uint64(0)
+	case "cosmos.mint.v1beta1.Params.yearly_reduction":
+		x.YearlyReduction = ""
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: cosmos.mint.v1beta1.Params"))
@@ -707,9 +823,18 @@ func (x *fastReflection_Params) Get(descriptor protoreflect.FieldDescriptor) pro
 	case "cosmos.mint.v1beta1.Params.goal_bonded":
 		value := x.GoalBonded
 		return protoreflect.ValueOfString(value)
+	case "cosmos.mint.v1beta1.Params.minted_amount_per_block":
+		value := x.MintedAmountPerBlock
+		return protoreflect.ValueOfString(value)
 	case "cosmos.mint.v1beta1.Params.blocks_per_year":
 		value := x.BlocksPerYear
 		return protoreflect.ValueOfUint64(value)
+	case "cosmos.mint.v1beta1.Params.max_mintable_amount":
+		value := x.MaxMintableAmount
+		return protoreflect.ValueOfUint64(value)
+	case "cosmos.mint.v1beta1.Params.yearly_reduction":
+		value := x.YearlyReduction
+		return protoreflect.ValueOfString(value)
 	default:
 		if descriptor.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: cosmos.mint.v1beta1.Params"))
@@ -740,8 +865,14 @@ func (x *fastReflection_Params) Set(fd protoreflect.FieldDescriptor, value proto
 		x.InflationMin = value.Interface().(string)
 	case "cosmos.mint.v1beta1.Params.goal_bonded":
 		x.GoalBonded = value.Interface().(string)
+	case "cosmos.mint.v1beta1.Params.minted_amount_per_block":
+		x.MintedAmountPerBlock = value.Interface().(string)
 	case "cosmos.mint.v1beta1.Params.blocks_per_year":
 		x.BlocksPerYear = value.Uint()
+	case "cosmos.mint.v1beta1.Params.max_mintable_amount":
+		x.MaxMintableAmount = value.Uint()
+	case "cosmos.mint.v1beta1.Params.yearly_reduction":
+		x.YearlyReduction = value.Interface().(string)
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: cosmos.mint.v1beta1.Params"))
@@ -772,8 +903,14 @@ func (x *fastReflection_Params) Mutable(fd protoreflect.FieldDescriptor) protore
 		panic(fmt.Errorf("field inflation_min of message cosmos.mint.v1beta1.Params is not mutable"))
 	case "cosmos.mint.v1beta1.Params.goal_bonded":
 		panic(fmt.Errorf("field goal_bonded of message cosmos.mint.v1beta1.Params is not mutable"))
+	case "cosmos.mint.v1beta1.Params.minted_amount_per_block":
+		panic(fmt.Errorf("field minted_amount_per_block of message cosmos.mint.v1beta1.Params is not mutable"))
 	case "cosmos.mint.v1beta1.Params.blocks_per_year":
 		panic(fmt.Errorf("field blocks_per_year of message cosmos.mint.v1beta1.Params is not mutable"))
+	case "cosmos.mint.v1beta1.Params.max_mintable_amount":
+		panic(fmt.Errorf("field max_mintable_amount of message cosmos.mint.v1beta1.Params is not mutable"))
+	case "cosmos.mint.v1beta1.Params.yearly_reduction":
+		panic(fmt.Errorf("field yearly_reduction of message cosmos.mint.v1beta1.Params is not mutable"))
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: cosmos.mint.v1beta1.Params"))
@@ -797,8 +934,14 @@ func (x *fastReflection_Params) NewField(fd protoreflect.FieldDescriptor) protor
 		return protoreflect.ValueOfString("")
 	case "cosmos.mint.v1beta1.Params.goal_bonded":
 		return protoreflect.ValueOfString("")
+	case "cosmos.mint.v1beta1.Params.minted_amount_per_block":
+		return protoreflect.ValueOfString("")
 	case "cosmos.mint.v1beta1.Params.blocks_per_year":
 		return protoreflect.ValueOfUint64(uint64(0))
+	case "cosmos.mint.v1beta1.Params.max_mintable_amount":
+		return protoreflect.ValueOfUint64(uint64(0))
+	case "cosmos.mint.v1beta1.Params.yearly_reduction":
+		return protoreflect.ValueOfString("")
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: cosmos.mint.v1beta1.Params"))
@@ -888,8 +1031,19 @@ func (x *fastReflection_Params) ProtoMethods() *protoiface.Methods {
 		if l > 0 {
 			n += 1 + l + runtime.Sov(uint64(l))
 		}
+		l = len(x.MintedAmountPerBlock)
+		if l > 0 {
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
 		if x.BlocksPerYear != 0 {
 			n += 1 + runtime.Sov(uint64(x.BlocksPerYear))
+		}
+		if x.MaxMintableAmount != 0 {
+			n += 1 + runtime.Sov(uint64(x.MaxMintableAmount))
+		}
+		l = len(x.YearlyReduction)
+		if l > 0 {
+			n += 1 + l + runtime.Sov(uint64(l))
 		}
 		if x.unknownFields != nil {
 			n += len(x.unknownFields)
@@ -920,10 +1074,29 @@ func (x *fastReflection_Params) ProtoMethods() *protoiface.Methods {
 			i -= len(x.unknownFields)
 			copy(dAtA[i:], x.unknownFields)
 		}
+		if len(x.YearlyReduction) > 0 {
+			i -= len(x.YearlyReduction)
+			copy(dAtA[i:], x.YearlyReduction)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.YearlyReduction)))
+			i--
+			dAtA[i] = 0x4a
+		}
+		if x.MaxMintableAmount != 0 {
+			i = runtime.EncodeVarint(dAtA, i, uint64(x.MaxMintableAmount))
+			i--
+			dAtA[i] = 0x40
+		}
 		if x.BlocksPerYear != 0 {
 			i = runtime.EncodeVarint(dAtA, i, uint64(x.BlocksPerYear))
 			i--
-			dAtA[i] = 0x30
+			dAtA[i] = 0x38
+		}
+		if len(x.MintedAmountPerBlock) > 0 {
+			i -= len(x.MintedAmountPerBlock)
+			copy(dAtA[i:], x.MintedAmountPerBlock)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.MintedAmountPerBlock)))
+			i--
+			dAtA[i] = 0x32
 		}
 		if len(x.GoalBonded) > 0 {
 			i -= len(x.GoalBonded)
@@ -1170,6 +1343,38 @@ func (x *fastReflection_Params) ProtoMethods() *protoiface.Methods {
 				x.GoalBonded = string(dAtA[iNdEx:postIndex])
 				iNdEx = postIndex
 			case 6:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field MintedAmountPerBlock", wireType)
+				}
+				var stringLen uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					stringLen |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				intStringLen := int(stringLen)
+				if intStringLen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + intStringLen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				x.MintedAmountPerBlock = string(dAtA[iNdEx:postIndex])
+				iNdEx = postIndex
+			case 7:
 				if wireType != 0 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field BlocksPerYear", wireType)
 				}
@@ -1188,6 +1393,57 @@ func (x *fastReflection_Params) ProtoMethods() *protoiface.Methods {
 						break
 					}
 				}
+			case 8:
+				if wireType != 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field MaxMintableAmount", wireType)
+				}
+				x.MaxMintableAmount = 0
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					x.MaxMintableAmount |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+			case 9:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field YearlyReduction", wireType)
+				}
+				var stringLen uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					stringLen |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				intStringLen := int(stringLen)
+				if intStringLen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + intStringLen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				x.YearlyReduction = string(dAtA[iNdEx:postIndex])
+				iNdEx = postIndex
 			default:
 				iNdEx = preIndex
 				skippy, err := runtime.Skip(dAtA[iNdEx:])
@@ -1245,7 +1501,8 @@ type Minter struct {
 	// current annual inflation rate
 	Inflation string `protobuf:"bytes,1,opt,name=inflation,proto3" json:"inflation,omitempty"`
 	// current annual expected provisions
-	AnnualProvisions string `protobuf:"bytes,2,opt,name=annual_provisions,json=annualProvisions,proto3" json:"annual_provisions,omitempty"`
+	AnnualProvisions string        `protobuf:"bytes,2,opt,name=annual_provisions,json=annualProvisions,proto3" json:"annual_provisions,omitempty"`
+	BlockHeader      *types.Header `protobuf:"bytes,3,opt,name=block_header,json=blockHeader,proto3" json:"block_header,omitempty"`
 }
 
 func (x *Minter) Reset() {
@@ -1282,6 +1539,13 @@ func (x *Minter) GetAnnualProvisions() string {
 	return ""
 }
 
+func (x *Minter) GetBlockHeader() *types.Header {
+	if x != nil {
+		return x.BlockHeader
+	}
+	return nil
+}
+
 // Params defines the parameters for the x/mint module.
 type Params struct {
 	state         protoimpl.MessageState
@@ -1299,7 +1563,13 @@ type Params struct {
 	// goal of percent bonded atoms
 	GoalBonded string `protobuf:"bytes,5,opt,name=goal_bonded,json=goalBonded,proto3" json:"goal_bonded,omitempty"`
 	// expected blocks per year
-	BlocksPerYear uint64 `protobuf:"varint,6,opt,name=blocks_per_year,json=blocksPerYear,proto3" json:"blocks_per_year,omitempty"`
+	MintedAmountPerBlock string `protobuf:"bytes,6,opt,name=minted_amount_per_block,json=mintedAmountPerBlock,proto3" json:"minted_amount_per_block,omitempty"`
+	// expected blocks per year
+	BlocksPerYear uint64 `protobuf:"varint,7,opt,name=blocks_per_year,json=blocksPerYear,proto3" json:"blocks_per_year,omitempty"`
+	// expected blocks per year
+	MaxMintableAmount uint64 `protobuf:"varint,8,opt,name=max_mintable_amount,json=maxMintableAmount,proto3" json:"max_mintable_amount,omitempty"`
+	// Yearly reduction to apply to minted amount
+	YearlyReduction string `protobuf:"bytes,9,opt,name=yearly_reduction,json=yearlyReduction,proto3" json:"yearly_reduction,omitempty"`
 }
 
 func (x *Params) Reset() {
@@ -1357,11 +1627,32 @@ func (x *Params) GetGoalBonded() string {
 	return ""
 }
 
+func (x *Params) GetMintedAmountPerBlock() string {
+	if x != nil {
+		return x.MintedAmountPerBlock
+	}
+	return ""
+}
+
 func (x *Params) GetBlocksPerYear() uint64 {
 	if x != nil {
 		return x.BlocksPerYear
 	}
 	return 0
+}
+
+func (x *Params) GetMaxMintableAmount() uint64 {
+	if x != nil {
+		return x.MaxMintableAmount
+	}
+	return 0
+}
+
+func (x *Params) GetYearlyReduction() string {
+	if x != nil {
+		return x.YearlyReduction
+	}
+	return ""
 }
 
 var File_cosmos_mint_v1beta1_mint_proto protoreflect.FileDescriptor
@@ -1374,6 +1665,7 @@ var file_cosmos_mint_v1beta1_mint_proto_rawDesc = []byte{
 	0x2f, 0x67, 0x6f, 0x67, 0x6f, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x19, 0x63, 0x6f, 0x73,
 	0x6d, 0x6f, 0x73, 0x5f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73,
 	0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x11, 0x61, 0x6d, 0x69, 0x6e, 0x6f, 0x2f, 0x61, 0x6d,
+<<<<<<< HEAD
 	0x69, 0x6e, 0x6f, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0xcf, 0x01, 0x0a, 0x06, 0x4d, 0x69,
 	0x6e, 0x74, 0x65, 0x72, 0x12, 0x5a, 0x0a, 0x09, 0x69, 0x6e, 0x66, 0x6c, 0x61, 0x74, 0x69, 0x6f,
 	0x6e, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x42, 0x3c, 0xc8, 0xde, 0x1f, 0x00, 0xda, 0xde, 0x1f,
@@ -1434,6 +1726,94 @@ var file_cosmos_mint_v1beta1_mint_proto_rawDesc = []byte{
 	0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0xea, 0x02, 0x15, 0x43, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x3a,
 	0x3a, 0x4d, 0x69, 0x6e, 0x74, 0x3a, 0x3a, 0x56, 0x31, 0x62, 0x65, 0x74, 0x61, 0x31, 0x62, 0x06,
 	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+=======
+	0x69, 0x6e, 0x6f, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x1c, 0x74, 0x65, 0x6e, 0x64, 0x65,
+	0x72, 0x6d, 0x69, 0x6e, 0x74, 0x2f, 0x74, 0x79, 0x70, 0x65, 0x73, 0x2f, 0x74, 0x79, 0x70, 0x65,
+	0x73, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0xfc, 0x01, 0x0a, 0x06, 0x4d, 0x69, 0x6e, 0x74,
+	0x65, 0x72, 0x12, 0x4f, 0x0a, 0x09, 0x69, 0x6e, 0x66, 0x6c, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x18,
+	0x01, 0x20, 0x01, 0x28, 0x09, 0x42, 0x31, 0xc8, 0xde, 0x1f, 0x00, 0xda, 0xde, 0x1f, 0x1b, 0x63,
+	0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x6d, 0x61, 0x74, 0x68,
+	0x2e, 0x4c, 0x65, 0x67, 0x61, 0x63, 0x79, 0x44, 0x65, 0x63, 0xd2, 0xb4, 0x2d, 0x0a, 0x63, 0x6f,
+	0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x44, 0x65, 0x63, 0x52, 0x09, 0x69, 0x6e, 0x66, 0x6c, 0x61, 0x74,
+	0x69, 0x6f, 0x6e, 0x12, 0x5e, 0x0a, 0x11, 0x61, 0x6e, 0x6e, 0x75, 0x61, 0x6c, 0x5f, 0x70, 0x72,
+	0x6f, 0x76, 0x69, 0x73, 0x69, 0x6f, 0x6e, 0x73, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x42, 0x31,
+	0xc8, 0xde, 0x1f, 0x00, 0xda, 0xde, 0x1f, 0x1b, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64,
+	0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x6d, 0x61, 0x74, 0x68, 0x2e, 0x4c, 0x65, 0x67, 0x61, 0x63, 0x79,
+	0x44, 0x65, 0x63, 0xd2, 0xb4, 0x2d, 0x0a, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x44, 0x65,
+	0x63, 0x52, 0x10, 0x61, 0x6e, 0x6e, 0x75, 0x61, 0x6c, 0x50, 0x72, 0x6f, 0x76, 0x69, 0x73, 0x69,
+	0x6f, 0x6e, 0x73, 0x12, 0x41, 0x0a, 0x0c, 0x62, 0x6c, 0x6f, 0x63, 0x6b, 0x5f, 0x68, 0x65, 0x61,
+	0x64, 0x65, 0x72, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x18, 0x2e, 0x74, 0x65, 0x6e, 0x64,
+	0x65, 0x72, 0x6d, 0x69, 0x6e, 0x74, 0x2e, 0x74, 0x79, 0x70, 0x65, 0x73, 0x2e, 0x48, 0x65, 0x61,
+	0x64, 0x65, 0x72, 0x42, 0x04, 0xc8, 0xde, 0x1f, 0x00, 0x52, 0x0b, 0x62, 0x6c, 0x6f, 0x63, 0x6b,
+	0x48, 0x65, 0x61, 0x64, 0x65, 0x72, 0x22, 0xd9, 0x06, 0x0a, 0x06, 0x50, 0x61, 0x72, 0x61, 0x6d,
+	0x73, 0x12, 0x1d, 0x0a, 0x0a, 0x6d, 0x69, 0x6e, 0x74, 0x5f, 0x64, 0x65, 0x6e, 0x6f, 0x6d, 0x18,
+	0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x09, 0x6d, 0x69, 0x6e, 0x74, 0x44, 0x65, 0x6e, 0x6f, 0x6d,
+	0x12, 0x6a, 0x0a, 0x15, 0x69, 0x6e, 0x66, 0x6c, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x72, 0x61,
+	0x74, 0x65, 0x5f, 0x63, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x42,
+	0x36, 0xc8, 0xde, 0x1f, 0x00, 0xda, 0xde, 0x1f, 0x1b, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73,
+	0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x6d, 0x61, 0x74, 0x68, 0x2e, 0x4c, 0x65, 0x67, 0x61, 0x63,
+	0x79, 0x44, 0x65, 0x63, 0xd2, 0xb4, 0x2d, 0x0a, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x44,
+	0x65, 0x63, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x13, 0x69, 0x6e, 0x66, 0x6c, 0x61, 0x74, 0x69,
+	0x6f, 0x6e, 0x52, 0x61, 0x74, 0x65, 0x43, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x12, 0x5b, 0x0a, 0x0d,
+	0x69, 0x6e, 0x66, 0x6c, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x6d, 0x61, 0x78, 0x18, 0x03, 0x20,
+	0x01, 0x28, 0x09, 0x42, 0x36, 0xc8, 0xde, 0x1f, 0x00, 0xda, 0xde, 0x1f, 0x1b, 0x63, 0x6f, 0x73,
+	0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x6d, 0x61, 0x74, 0x68, 0x2e, 0x4c,
+	0x65, 0x67, 0x61, 0x63, 0x79, 0x44, 0x65, 0x63, 0xd2, 0xb4, 0x2d, 0x0a, 0x63, 0x6f, 0x73, 0x6d,
+	0x6f, 0x73, 0x2e, 0x44, 0x65, 0x63, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0c, 0x69, 0x6e, 0x66,
+	0x6c, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x4d, 0x61, 0x78, 0x12, 0x5b, 0x0a, 0x0d, 0x69, 0x6e, 0x66,
+	0x6c, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x6d, 0x69, 0x6e, 0x18, 0x04, 0x20, 0x01, 0x28, 0x09,
+	0x42, 0x36, 0xc8, 0xde, 0x1f, 0x00, 0xda, 0xde, 0x1f, 0x1b, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73,
+	0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x6d, 0x61, 0x74, 0x68, 0x2e, 0x4c, 0x65, 0x67, 0x61,
+	0x63, 0x79, 0x44, 0x65, 0x63, 0xd2, 0xb4, 0x2d, 0x0a, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e,
+	0x44, 0x65, 0x63, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0c, 0x69, 0x6e, 0x66, 0x6c, 0x61, 0x74,
+	0x69, 0x6f, 0x6e, 0x4d, 0x69, 0x6e, 0x12, 0x57, 0x0a, 0x0b, 0x67, 0x6f, 0x61, 0x6c, 0x5f, 0x62,
+	0x6f, 0x6e, 0x64, 0x65, 0x64, 0x18, 0x05, 0x20, 0x01, 0x28, 0x09, 0x42, 0x36, 0xc8, 0xde, 0x1f,
+	0x00, 0xda, 0xde, 0x1f, 0x1b, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69,
+	0x6f, 0x2f, 0x6d, 0x61, 0x74, 0x68, 0x2e, 0x4c, 0x65, 0x67, 0x61, 0x63, 0x79, 0x44, 0x65, 0x63,
+	0xd2, 0xb4, 0x2d, 0x0a, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x44, 0x65, 0x63, 0xa8, 0xe7,
+	0xb0, 0x2a, 0x01, 0x52, 0x0a, 0x67, 0x6f, 0x61, 0x6c, 0x42, 0x6f, 0x6e, 0x64, 0x65, 0x64, 0x12,
+	0x87, 0x01, 0x0a, 0x17, 0x6d, 0x69, 0x6e, 0x74, 0x65, 0x64, 0x5f, 0x61, 0x6d, 0x6f, 0x75, 0x6e,
+	0x74, 0x5f, 0x70, 0x65, 0x72, 0x5f, 0x62, 0x6c, 0x6f, 0x63, 0x6b, 0x18, 0x06, 0x20, 0x01, 0x28,
+	0x09, 0x42, 0x50, 0xc8, 0xde, 0x1f, 0x00, 0xda, 0xde, 0x1f, 0x26, 0x67, 0x69, 0x74, 0x68, 0x75,
+	0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2f, 0x63, 0x6f, 0x73,
+	0x6d, 0x6f, 0x73, 0x2d, 0x73, 0x64, 0x6b, 0x2f, 0x74, 0x79, 0x70, 0x65, 0x73, 0x2e, 0x44, 0x65,
+	0x63, 0xf2, 0xde, 0x1f, 0x1e, 0x79, 0x61, 0x6d, 0x6c, 0x3a, 0x22, 0x6d, 0x69, 0x6e, 0x74, 0x65,
+	0x64, 0x5f, 0x61, 0x6d, 0x6f, 0x75, 0x6e, 0x74, 0x5f, 0x70, 0x65, 0x72, 0x5f, 0x62, 0x6c, 0x6f,
+	0x63, 0x6b, 0x22, 0x52, 0x14, 0x6d, 0x69, 0x6e, 0x74, 0x65, 0x64, 0x41, 0x6d, 0x6f, 0x75, 0x6e,
+	0x74, 0x50, 0x65, 0x72, 0x42, 0x6c, 0x6f, 0x63, 0x6b, 0x12, 0x42, 0x0a, 0x0f, 0x62, 0x6c, 0x6f,
+	0x63, 0x6b, 0x73, 0x5f, 0x70, 0x65, 0x72, 0x5f, 0x79, 0x65, 0x61, 0x72, 0x18, 0x07, 0x20, 0x01,
+	0x28, 0x04, 0x42, 0x1a, 0xf2, 0xde, 0x1f, 0x16, 0x79, 0x61, 0x6d, 0x6c, 0x3a, 0x22, 0x62, 0x6c,
+	0x6f, 0x63, 0x6b, 0x73, 0x5f, 0x70, 0x65, 0x72, 0x5f, 0x79, 0x65, 0x61, 0x72, 0x22, 0x52, 0x0d,
+	0x62, 0x6c, 0x6f, 0x63, 0x6b, 0x73, 0x50, 0x65, 0x72, 0x59, 0x65, 0x61, 0x72, 0x12, 0x4e, 0x0a,
+	0x13, 0x6d, 0x61, 0x78, 0x5f, 0x6d, 0x69, 0x6e, 0x74, 0x61, 0x62, 0x6c, 0x65, 0x5f, 0x61, 0x6d,
+	0x6f, 0x75, 0x6e, 0x74, 0x18, 0x08, 0x20, 0x01, 0x28, 0x04, 0x42, 0x1e, 0xf2, 0xde, 0x1f, 0x1a,
+	0x79, 0x61, 0x6d, 0x6c, 0x3a, 0x22, 0x6d, 0x61, 0x78, 0x5f, 0x6d, 0x69, 0x6e, 0x74, 0x61, 0x62,
+	0x6c, 0x65, 0x5f, 0x61, 0x6d, 0x6f, 0x75, 0x6e, 0x74, 0x22, 0x52, 0x11, 0x6d, 0x61, 0x78, 0x4d,
+	0x69, 0x6e, 0x74, 0x61, 0x62, 0x6c, 0x65, 0x41, 0x6d, 0x6f, 0x75, 0x6e, 0x74, 0x12, 0x74, 0x0a,
+	0x10, 0x79, 0x65, 0x61, 0x72, 0x6c, 0x79, 0x5f, 0x72, 0x65, 0x64, 0x75, 0x63, 0x74, 0x69, 0x6f,
+	0x6e, 0x18, 0x09, 0x20, 0x01, 0x28, 0x09, 0x42, 0x49, 0xc8, 0xde, 0x1f, 0x00, 0xda, 0xde, 0x1f,
+	0x26, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x63, 0x6f, 0x73, 0x6d,
+	0x6f, 0x73, 0x2f, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2d, 0x73, 0x64, 0x6b, 0x2f, 0x74, 0x79,
+	0x70, 0x65, 0x73, 0x2e, 0x44, 0x65, 0x63, 0xf2, 0xde, 0x1f, 0x17, 0x79, 0x61, 0x6d, 0x6c, 0x3a,
+	0x22, 0x79, 0x65, 0x61, 0x72, 0x6c, 0x79, 0x5f, 0x72, 0x65, 0x64, 0x75, 0x63, 0x74, 0x69, 0x6f,
+	0x6e, 0x22, 0x52, 0x0f, 0x79, 0x65, 0x61, 0x72, 0x6c, 0x79, 0x52, 0x65, 0x64, 0x75, 0x63, 0x74,
+	0x69, 0x6f, 0x6e, 0x3a, 0x1d, 0x8a, 0xe7, 0xb0, 0x2a, 0x18, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73,
+	0x2d, 0x73, 0x64, 0x6b, 0x2f, 0x78, 0x2f, 0x6d, 0x69, 0x6e, 0x74, 0x2f, 0x50, 0x61, 0x72, 0x61,
+	0x6d, 0x73, 0x42, 0xc4, 0x01, 0x0a, 0x17, 0x63, 0x6f, 0x6d, 0x2e, 0x63, 0x6f, 0x73, 0x6d, 0x6f,
+	0x73, 0x2e, 0x6d, 0x69, 0x6e, 0x74, 0x2e, 0x76, 0x31, 0x62, 0x65, 0x74, 0x61, 0x31, 0x42, 0x09,
+	0x4d, 0x69, 0x6e, 0x74, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x50, 0x01, 0x5a, 0x30, 0x63, 0x6f, 0x73,
+	0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x63, 0x6f,
+	0x73, 0x6d, 0x6f, 0x73, 0x2f, 0x6d, 0x69, 0x6e, 0x74, 0x2f, 0x76, 0x31, 0x62, 0x65, 0x74, 0x61,
+	0x31, 0x3b, 0x6d, 0x69, 0x6e, 0x74, 0x76, 0x31, 0x62, 0x65, 0x74, 0x61, 0x31, 0xa2, 0x02, 0x03,
+	0x43, 0x4d, 0x58, 0xaa, 0x02, 0x13, 0x43, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x4d, 0x69, 0x6e,
+	0x74, 0x2e, 0x56, 0x31, 0x62, 0x65, 0x74, 0x61, 0x31, 0xca, 0x02, 0x13, 0x43, 0x6f, 0x73, 0x6d,
+	0x6f, 0x73, 0x5c, 0x4d, 0x69, 0x6e, 0x74, 0x5c, 0x56, 0x31, 0x62, 0x65, 0x74, 0x61, 0x31, 0xe2,
+	0x02, 0x1f, 0x43, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x5c, 0x4d, 0x69, 0x6e, 0x74, 0x5c, 0x56, 0x31,
+	0x62, 0x65, 0x74, 0x61, 0x31, 0x5c, 0x47, 0x50, 0x42, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74,
+	0x61, 0xea, 0x02, 0x15, 0x43, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x3a, 0x3a, 0x4d, 0x69, 0x6e, 0x74,
+	0x3a, 0x3a, 0x56, 0x31, 0x62, 0x65, 0x74, 0x61, 0x31, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f,
+	0x33,
+>>>>>>> 9676c65... all error resolved
 }
 
 var (
@@ -1450,15 +1830,17 @@ func file_cosmos_mint_v1beta1_mint_proto_rawDescGZIP() []byte {
 
 var file_cosmos_mint_v1beta1_mint_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
 var file_cosmos_mint_v1beta1_mint_proto_goTypes = []interface{}{
-	(*Minter)(nil), // 0: cosmos.mint.v1beta1.Minter
-	(*Params)(nil), // 1: cosmos.mint.v1beta1.Params
+	(*Minter)(nil),       // 0: cosmos.mint.v1beta1.Minter
+	(*Params)(nil),       // 1: cosmos.mint.v1beta1.Params
+	(*types.Header)(nil), // 2: tendermint.types.Header
 }
 var file_cosmos_mint_v1beta1_mint_proto_depIdxs = []int32{
-	0, // [0:0] is the sub-list for method output_type
-	0, // [0:0] is the sub-list for method input_type
-	0, // [0:0] is the sub-list for extension type_name
-	0, // [0:0] is the sub-list for extension extendee
-	0, // [0:0] is the sub-list for field type_name
+	2, // 0: cosmos.mint.v1beta1.Minter.block_header:type_name -> tendermint.types.Header
+	1, // [1:1] is the sub-list for method output_type
+	1, // [1:1] is the sub-list for method input_type
+	1, // [1:1] is the sub-list for extension type_name
+	1, // [1:1] is the sub-list for extension extendee
+	0, // [0:1] is the sub-list for field type_name
 }
 
 func init() { file_cosmos_mint_v1beta1_mint_proto_init() }

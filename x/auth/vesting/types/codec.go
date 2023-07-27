@@ -39,7 +39,7 @@ func RegisterInterfaces(registry types.InterfaceRegistry) {
 		&DelayedVestingAccount{},
 		&PeriodicVestingAccount{},
 		&PermanentLockedAccount{},
-		&ForeverVestingAccount{}
+		&ForeverVestingAccount{},
 	)
 
 	registry.RegisterImplementations(
@@ -49,7 +49,7 @@ func RegisterInterfaces(registry types.InterfaceRegistry) {
 		&ContinuousVestingAccount{},
 		&PeriodicVestingAccount{},
 		&PermanentLockedAccount{},
-		&ForeverVestingAccount{}
+		&ForeverVestingAccount{},
 	)
 
 	registry.RegisterImplementations(
@@ -59,7 +59,7 @@ func RegisterInterfaces(registry types.InterfaceRegistry) {
 		&ContinuousVestingAccount{},
 		&PeriodicVestingAccount{},
 		&PermanentLockedAccount{},
-		&ForeverVestingAccount{}
+		&ForeverVestingAccount{},
 	)
 
 	registry.RegisterImplementations(

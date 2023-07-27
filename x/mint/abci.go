@@ -31,7 +31,6 @@ func BeginBlocker(ctx sdk.Context, k keeper.Keeper, ic types.InflationCalculatio
 		return err
 	}
 
-	minter.BlockHeader = ctx.BlockHeader()
 	minter.Inflation = ic(ctx, minter, params, bondedRatio)
 	minter.AnnualProvisions = minter.NextAnnualProvisions(params, totalStakingSupply)
 	k.SetMinter(ctx, minter)
@@ -50,16 +49,15 @@ func BeginBlocker(ctx sdk.Context, k keeper.Keeper, ic types.InflationCalculatio
 	totalVestedAmount := math.LegacyNewDec(0)
 	for _, account := range foreverVestingAccounts {
 		vestingSupplyPercentage, _ := math.LegacyNewDecFromStr(account.VestingSupplyPercentage)
-		vestedForBlock := sdk.NewCoin("ujmes", totalAmount.ToDec().Mul(vestingSupplyPercentage).TruncateInt())
+		vestedForBlock := sdk.NewCoin("ujmes", totalAmount.Mul(math.Int(vestingSupplyPercentage)))
 
 		percentageVestingOfSupply = percentageVestingOfSupply.Add(vestingSupplyPercentage)
 		account.AlreadyVested = account.AlreadyVested.Add(vestedForBlock)
-		totalVestedAmount = totalVestedAmount.Add(account.AlreadyVested.AmountOf("ujmes").ToDec())
+		totalVestedAmount = totalVestedAmount.Add(math.LegacyDec(account.AlreadyVested.AmountOf("ujmes")))
 		k.GetAuthKeeper().SetAccount(ctx, &account)
 	}
 
 	logger.Info("=============== =============== ===============")
-	logger.Info("=============== MINTER.BeginBlocker(%v)", "height", ctx.BlockHeader().Height)
 	logger.Info("=============== MINTER.coinbaseReward(%v)", "reward", mintedCoin)
 	logger.Info("=============== =============== ===============")
 
@@ -68,7 +66,7 @@ func BeginBlocker(ctx sdk.Context, k keeper.Keeper, ic types.InflationCalculatio
 
 	maxMintableAmount := params.GetMaxMintableAmount()
 
-	logger.Info("Prepare to mint", "blockheight", ctx.BlockHeight(), "mintAmount", mintedCoins.AmountOf("ujmes").String(), ".currentSupply", currentSupply, "expectedNextSupply", expectedNextSupply, "maxSupply", maxMintableAmount, "unlockedVesting", unlockedVesting)
+	logger.Info("Prepare to mint", "mintAmount", mintedCoins.AmountOf("ujmes").String(), ".currentSupply", currentSupply, "expectedNextSupply", expectedNextSupply, "maxSupply", maxMintableAmount, "unlockedVesting", unlockedVesting)
 	if expectedNextSupply <= maxMintableAmount {
 		err := k.MintCoins(ctx, mintedCoins)
 		if err != nil {
