@@ -23,7 +23,6 @@ message Minter {
     (gogoproto.nullable)   = false
   ];
   tendermint.types.Header block_header = 3 [(gogoproto.nullable) = false];
-
 }
 
 // Params defines the parameters for the x/mint module.
