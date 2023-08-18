@@ -53,9 +53,9 @@ type StakingKeeper interface {
 	IterateDelegations(ctx sdk.Context, delegator sdk.AccAddress,
 		fn func(index int64, delegation stakingtypes.DelegationI) (stop bool))
 
-	GetAllSDKDelegations(ctx sdk.Context) ([]stakingtypes.Delegation)
-	GetAllValidators(ctx sdk.Context) ([]stakingtypes.Validator)
-	GetAllDelegatorDelegations(ctx sdk.Context, delegator sdk.AccAddress) ([]stakingtypes.Delegation)
+	GetAllSDKDelegations(ctx sdk.Context) []stakingtypes.Delegation
+	GetAllValidators(ctx sdk.Context) (validators []stakingtypes.Validator)
+	GetAllDelegatorDelegations(ctx sdk.Context, delegator sdk.AccAddress) []stakingtypes.Delegation
 	GetBondedValidatorsByPower(ctx sdk.Context) []stakingtypes.Validator
 }
 
