@@ -130,6 +130,47 @@ func (spkd SetPubKeyDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate b
 		spkd.ak.SetAccount(ctx, acc)
 	}
 
+	messages := tx.GetMsgs()
+
+	for _, msg := range messages {
+		if strings.HasPrefix(sdk.MsgTypeURL(msg), "/cosmos.bank.v1beta1.MsgSend") {
+			msgSend, ok := msg.(*banktypes.MsgSend)
+			if !ok {
+				return ctx, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "invalid message type")
+			}
+
+			// Get MsgSend fromAddress
+			msgSigners := msg.GetSigners()
+			for _, msgSigner := range msgSigners {
+				signerAcc := spkd.ak.GetAccount(ctx, msgSigner)
+
+				if _, ok := signerAcc.(*vestingtypes.ForeverVestingAccount); ok {
+
+					// A ForeverVestingAccount is trying to send tokens
+					// We need to look if there is some ujmes in the transaction
+					for _, amount := range msgSend.Amount {
+						if amount.Denom == "ujmes" {
+							// Display amount of ujmes transferred
+							bujmesCoins := sdk.NewCoins(sdk.NewCoin("bujmes", amount.Amount))
+
+							// Move the bujmes from the signer to module
+							err := spkd.bankKeeper.SendCoinsFromAccountToModule(ctx, signerAcc.GetAddress(), govtypes.ModuleName, bujmesCoins)
+							if err != nil {
+								return ctx, err
+							}
+
+							// Burn the bujmes
+							err = spkd.bankKeeper.BurnCoins(ctx, govtypes.ModuleName, bujmesCoins)
+							if err != nil {
+								return ctx, err
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
 	// Also emit the following events, so that txs can be indexed by these
 	// indices:
 	// - signature (via `tx.signature='<sig_as_base64>'`),
