@@ -139,7 +139,10 @@ func (k Keeper) ApplyAndReturnValidatorSetUpdates(ctx sdk.Context) (updates []ab
 		// if we get to a zero-power validator (which we don't bond),
 		// there are no more possible bonded validators
 		if validator.PotentialConsensusPower(k.PowerReduction(ctx)) == 0 {
-			break
+			// TODO: remove me post-IDP as it allows for a 0-stake and consider bondable until IDP period ends
+			if ctx.BlockHeight() > 483940 {
+				break
+			}
 		}
 
 		// apply the appropriate state change if necessary
