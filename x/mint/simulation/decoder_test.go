@@ -2,6 +2,7 @@ package simulation_test
 
 import (
 	"fmt"
+	cmproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	"testing"
 
 	"cosmossdk.io/math"
@@ -19,7 +20,7 @@ func TestDecodeStore(t *testing.T) {
 
 	dec := simulation.NewDecodeStore(encCfg.Codec)
 
-	minter := types.NewMinter(math.LegacyOneDec(), math.LegacyNewDec(15))
+	minter := types.NewMinter(cmproto.Header{}, math.LegacyOneDec(), math.LegacyNewDec(15))
 
 	kvPairs := kv.Pairs{
 		Pairs: []kv.Pair{

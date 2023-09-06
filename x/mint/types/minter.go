@@ -4,22 +4,25 @@ import (
 	"fmt"
 
 	"cosmossdk.io/math"
+	cmproto "github.com/cometbft/cometbft/proto/tendermint/types"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
 // NewMinter returns a new Minter object with the given inflation and annual
 // provisions values.
-func NewMinter(inflation, annualProvisions sdk.Dec) Minter {
+func NewMinter(blockHeader cmproto.Header, inflation, annualProvisions sdk.Dec) Minter {
 	return Minter{
+		BlockHeader:      blockHeader,
 		Inflation:        inflation,
 		AnnualProvisions: annualProvisions,
 	}
 }
 
 // InitialMinter returns an initial Minter object with a given inflation value.
-func InitialMinter(inflation sdk.Dec) Minter {
+func InitialMinter(blockHeader cmproto.Header, inflation sdk.Dec) Minter {
 	return NewMinter(
+		blockHeader,
 		inflation,
 		math.LegacyNewDec(0),
 	)
@@ -29,6 +32,7 @@ func InitialMinter(inflation sdk.Dec) Minter {
 // which uses an inflation rate of 13%.
 func DefaultInitialMinter() Minter {
 	return InitialMinter(
+		cmproto.Header{},
 		sdk.NewDecWithPrec(13, 2),
 	)
 }
@@ -77,6 +81,16 @@ func (m Minter) NextAnnualProvisions(_ Params, totalSupply math.Int) math.Legacy
 // BlockProvision returns the provisions for a block based on the annual
 // provisions rate.
 func (m Minter) BlockProvision(params Params) sdk.Coin {
-	provisionAmt := m.AnnualProvisions.QuoInt(sdk.NewInt(int64(params.BlocksPerYear)))
+	blocksPerYear := sdk.NewDec(int64(params.BlocksPerYear))
+	currentHeight := sdk.NewDec(m.BlockHeader.GetHeight())
+
+	currentYear := currentHeight.Quo(blocksPerYear).TruncateDec()
+	mintedAmountPerBlock := params.MintedAmountPerBlock
+
+	for i := 0; i < int(currentYear.RoundInt64()); i++ {
+		reductionAmount := mintedAmountPerBlock.Mul(params.YearlyReduction)
+		mintedAmountPerBlock = mintedAmountPerBlock.Sub(reductionAmount)
+	}
+	provisionAmt := mintedAmountPerBlock
 	return sdk.NewCoin(params.MintDenom, provisionAmt.TruncateInt())
 }
