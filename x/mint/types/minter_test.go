@@ -1,6 +1,7 @@
 package types
 
 import (
+	cmproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	"math/rand"
 	"testing"
 
@@ -60,7 +61,8 @@ func TestNextInflation(t *testing.T) {
 }
 
 func TestBlockProvision(t *testing.T) {
-	minter := InitialMinter(sdk.NewDecWithPrec(1, 1))
+	initialBlockHeader := cmproto.Header{}
+	minter := InitialMinter(initialBlockHeader, sdk.NewDecWithPrec(1, 1))
 	params := DefaultParams()
 
 	secondsPerYear := int64(60 * 60 * 8766)
@@ -95,7 +97,8 @@ func TestBlockProvision(t *testing.T) {
 // BenchmarkBlockProvision-4 3000000 429 ns/op
 func BenchmarkBlockProvision(b *testing.B) {
 	b.ReportAllocs()
-	minter := InitialMinter(sdk.NewDecWithPrec(1, 1))
+	initialBlockHeader := cmproto.Header{}
+	minter := InitialMinter(initialBlockHeader, sdk.NewDecWithPrec(1, 1))
 	params := DefaultParams()
 
 	s1 := rand.NewSource(100)
@@ -112,7 +115,8 @@ func BenchmarkBlockProvision(b *testing.B) {
 // BenchmarkNextInflation-4 1000000 1828 ns/op
 func BenchmarkNextInflation(b *testing.B) {
 	b.ReportAllocs()
-	minter := InitialMinter(sdk.NewDecWithPrec(1, 1))
+	initialBlockHeader := cmproto.Header{}
+	minter := InitialMinter(initialBlockHeader, sdk.NewDecWithPrec(1, 1))
 	params := DefaultParams()
 	bondedRatio := sdk.NewDecWithPrec(1, 1)
 
@@ -126,7 +130,8 @@ func BenchmarkNextInflation(b *testing.B) {
 // BenchmarkNextAnnualProvisions-4 5000000 251 ns/op
 func BenchmarkNextAnnualProvisions(b *testing.B) {
 	b.ReportAllocs()
-	minter := InitialMinter(sdk.NewDecWithPrec(1, 1))
+	initialBlockHeader := cmproto.Header{}
+	minter := InitialMinter(initialBlockHeader, sdk.NewDecWithPrec(1, 1))
 	params := DefaultParams()
 	totalSupply := sdk.NewInt(100000000000000)
 
