@@ -12,11 +12,29 @@ import (
 // AllocateTokens performs reward and fee distribution to all validators based
 // on the F1 fee distribution specification.
 func (k Keeper) AllocateTokens(ctx sdk.Context, totalPreviousPower int64, bondedVotes []abci.VoteInfo) {
+	logger := k.Logger(ctx)
 	// fetch and clear the collected fees for distribution, since this is
 	// called in BeginBlock, collected fees will be from the previous block
 	// (and distributed to the previous proposer)
 	feeCollector := k.authKeeper.GetModuleAccount(ctx, k.feeCollectorName)
 	feesCollectedInt := k.bankKeeper.GetAllBalances(ctx, feeCollector.GetAddress())
+	totalFeesCollected := sdk.NewDecCoinsFromCoins(feesCollectedInt...)
+	blockHeaderHeight := ctx.BlockHeader().Height
+
+	// If we are in IDP, we have a different set of rules
+	// During the Initial Distribution Period (IDP), which include the first 483840 blocks (~28 days -)
+	// the allocation differs in its ruling.
+	// - We extends distribution to reward a random validator (4%)
+	// - We do not distribute to DAOs
+	// After IDP, on the portion of the distribution that is awarded to DAOs but are not claimed (active grants)
+	// We will burn the tokens instead of sending them to the community pool or toward validators.
+	// It create an incentive model where, because of the lack of additional minted tokens
+	// the prior ones have more "values", incentivising the validators to have scrutinity on DAOs.
+
+	isIDP := blockHeaderHeight <= 483840
+
+	logger.Info("Distribution started at blockheight: ", blockHeaderHeight, " isIDP:", isIDP, " totalFeesCollected:", totalFeesCollected)
+
 	feesCollected := sdk.NewDecCoinsFromCoins(feesCollectedInt...)
 
 	// transfer collected fees to the distribution module account
@@ -28,11 +46,13 @@ func (k Keeper) AllocateTokens(ctx sdk.Context, totalPreviousPower int64, bonded
 	// temporary workaround to keep CanWithdrawInvariant happy
 	// general discussions here: https://github.com/cosmos/cosmos-sdk/issues/2906#issuecomment-441867634
 	feePool := k.GetFeePool(ctx)
-	if totalPreviousPower == 0 {
-		feePool.CommunityPool = feePool.CommunityPool.Add(feesCollected...)
-		k.SetFeePool(ctx, feePool)
-		return
-	}
+	// calculate fraction votes, set default to 1
+	//previousFractionVotes := sdk.OneDec()
+
+	// totalPreviousPower is total power, sumPreviousPrecommitPower is total signing power
+	//if totalPreviousPower != 0 {
+	//	previousFractionVotes = sdk.NewDec(totalPreviousPower).Quo(sdk.NewDec(totalPreviousPower))
+	//}
 
 	// calculate fraction allocated to validators
 	remaining := feesCollected
