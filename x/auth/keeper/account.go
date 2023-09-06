@@ -3,6 +3,7 @@ package keeper
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth/types"
+	vestingtypes "github.com/cosmos/cosmos-sdk/x/auth/vesting/types"
 )
 
 // NewAccountWithAddress implements AccountKeeperI.
@@ -56,6 +57,20 @@ func (ak AccountKeeper) GetAccountAddressByID(ctx sdk.Context, id uint64) string
 		return ""
 	}
 	return sdk.AccAddress(bz).String()
+}
+
+// GetAllForeverVestingAccounts returns all ForeverVestingAccounts accounts in the accountKeeper.
+func (ak AccountKeeper) GetAllForeverVestingAccounts(ctx sdk.Context) (accounts []vestingtypes.ForeverVestingAccount) {
+	ak.IterateAccounts(ctx, func(acc types.AccountI) (stop bool) {
+		// Read if acc had a original_vesting field
+		foreverVestingAccount, ok := acc.(*vestingtypes.ForeverVestingAccount)
+		if ok {
+			accounts = append(accounts, *foreverVestingAccount)
+		}
+		return false
+	})
+
+	return accounts
 }
 
 // GetAllAccounts returns all accounts in the accountKeeper.
