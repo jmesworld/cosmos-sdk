@@ -54,6 +54,10 @@ var (
 	ValidatorSlashEventPrefix            = []byte{0x08} // key for validator slash fraction
 
 	ParamsKey = []byte{0x09} // key for distribution module params
+
+	GovernanceContractAddress = []byte{0x10} // key for governance contract address
+	WinningGrantsKey          = []byte{0x11} // key for winning grants
+	ProposerRewardKey         = []byte{0x12} // key for proposer reward
 )
 
 // GetValidatorOutstandingRewardsAddress creates an address from a validator's outstanding rewards key.
@@ -80,6 +84,9 @@ func GetDelegatorWithdrawInfoAddress(key []byte) (delAddr sdk.AccAddress) {
 	kv.AssertKeyLength(addr, int(key[1]))
 
 	return sdk.AccAddress(addr)
+}
+func GetWinningGrantsHeightKey() []byte {
+	return WinningGrantsKey
 }
 
 // GetDelegatorStartingInfoAddresses creates the addresses from a delegator starting info key.
