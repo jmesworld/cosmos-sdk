@@ -49,7 +49,7 @@ func TestSetPubKey(t *testing.T) {
 	tx, err := suite.CreateTestTx(privs, accNums, accSeqs, suite.ctx.ChainID())
 	require.NoError(t, err)
 
-	spkd := ante.NewSetPubKeyDecorator(suite.accountKeeper)
+	spkd := ante.NewSetPubKeyDecorator(suite.accountKeeper, suite.bankKeeper)
 	antehandler := sdk.ChainAnteDecorators(spkd)
 
 	ctx, err := antehandler(suite.ctx, tx, false)
@@ -144,7 +144,7 @@ func TestSigVerification(t *testing.T) {
 	feeAmount := testdata.NewTestFeeAmount()
 	gasLimit := testdata.NewTestGasLimit()
 
-	spkd := ante.NewSetPubKeyDecorator(suite.accountKeeper)
+	spkd := ante.NewSetPubKeyDecorator(suite.accountKeeper, suite.bankKeeper)
 	svd := ante.NewSigVerificationDecorator(suite.accountKeeper, suite.clientCtx.TxConfig.SignModeHandler())
 	antehandler := sdk.ChainAnteDecorators(spkd, svd)
 
@@ -254,7 +254,7 @@ func TestSigVerification_ExplicitAmino(t *testing.T) {
 	feeAmount := testdata.NewTestFeeAmount()
 	gasLimit := testdata.NewTestGasLimit()
 
-	spkd := ante.NewSetPubKeyDecorator(suite.accountKeeper)
+	spkd := ante.NewSetPubKeyDecorator(suite.accountKeeper, suite.bankKeeper)
 	svd := ante.NewSigVerificationDecorator(suite.accountKeeper, suite.clientCtx.TxConfig.SignModeHandler())
 	antehandler := sdk.ChainAnteDecorators(spkd, svd)
 
@@ -347,7 +347,7 @@ func runSigDecorators(t *testing.T, params types.Params, _ bool, privs ...crypto
 	tx, err := suite.CreateTestTx(privs, accNums, accSeqs, suite.ctx.ChainID())
 	require.NoError(t, err)
 
-	spkd := ante.NewSetPubKeyDecorator(suite.accountKeeper)
+	spkd := ante.NewSetPubKeyDecorator(suite.accountKeeper, suite.bankKeeper)
 	svgc := ante.NewSigGasConsumeDecorator(suite.accountKeeper, ante.DefaultSigVerificationGasConsumer)
 	svd := ante.NewSigVerificationDecorator(suite.accountKeeper, suite.clientCtx.TxConfig.SignModeHandler())
 	antehandler := sdk.ChainAnteDecorators(spkd, svgc, svd)

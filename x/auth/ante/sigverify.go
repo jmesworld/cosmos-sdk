@@ -5,6 +5,10 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"fmt"
+	vestingtypes "github.com/cosmos/cosmos-sdk/x/auth/vesting/types"
+	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
+	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
+	"strings"
 
 	"github.com/cosmos/cosmos-sdk/crypto/keys/ed25519"
 	kmultisig "github.com/cosmos/cosmos-sdk/crypto/keys/multisig"
@@ -45,12 +49,14 @@ type SignatureVerificationGasConsumer = func(meter sdk.GasMeter, sig signing.Sig
 // PubKeys must be set in context for all signers before any other sigverify decorators run
 // CONTRACT: Tx must implement SigVerifiableTx interface
 type SetPubKeyDecorator struct {
-	ak AccountKeeper
+	ak         AccountKeeper
+	bankKeeper types.BankKeeper
 }
 
-func NewSetPubKeyDecorator(ak AccountKeeper) SetPubKeyDecorator {
+func NewSetPubKeyDecorator(ak AccountKeeper, bk types.BankKeeper) SetPubKeyDecorator {
 	return SetPubKeyDecorator{
-		ak: ak,
+		ak:         ak,
+		bankKeeper: bk,
 	}
 }
 
