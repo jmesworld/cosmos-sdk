@@ -314,17 +314,26 @@ func (v Validator) InvalidExRate() bool {
 
 // calculate the token worth of provided shares
 func (v Validator) TokensFromShares(shares sdk.Dec) math.LegacyDec {
+	if v.DelegatorShares.IsZero() {
+		return sdk.ZeroDec()
+	}
 	return (shares.MulInt(v.Tokens)).Quo(v.DelegatorShares)
 }
 
 // calculate the token worth of provided shares, truncated
 func (v Validator) TokensFromSharesTruncated(shares sdk.Dec) math.LegacyDec {
+	if v.DelegatorShares.IsZero() {
+		return sdk.ZeroDec()
+	}
 	return (shares.MulInt(v.Tokens)).QuoTruncate(v.DelegatorShares)
 }
 
 // TokensFromSharesRoundUp returns the token worth of provided shares, rounded
 // up.
 func (v Validator) TokensFromSharesRoundUp(shares sdk.Dec) math.LegacyDec {
+	if v.DelegatorShares.IsZero() {
+		return sdk.ZeroDec()
+	}
 	return (shares.MulInt(v.Tokens)).QuoRoundUp(v.DelegatorShares)
 }
 
