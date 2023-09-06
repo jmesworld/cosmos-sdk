@@ -2,6 +2,7 @@ package ante
 
 import (
 	"fmt"
+	"strings"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -97,13 +98,34 @@ func (dfd DeductFeeDecorator) checkDeductFee(ctx sdk.Context, sdkTx sdk.Tx, fee 
 	}
 
 	deductFeesFromAcc := dfd.accountKeeper.GetAccount(ctx, deductFeesFrom)
-	if deductFeesFromAcc == nil {
-		return sdkerrors.ErrUnknownAddress.Wrapf("fee payer address: %s does not exist", deductFeesFrom)
+
+	messages := sdkTx.GetMsgs()
+	hasToPayFee := true
+
+	// On initial period, we need liquidity to bootstrap fairly the chain, hence, we remove fees
+	// This only applies to withdrawals of the rewards and single purpose transactions
+	if ctx.BlockHeader().Height < 483840 && len(messages) == 1 {
+		// Read first message
+		msg := messages[0]
+		// if type url is /cosmos.distribution.v1beta1.MsgWithdrawDelegatorReward
+		// or /cosmos.distribution.v1beta1.MsgWithdrawValidatorCommission
+
+		if strings.HasPrefix(sdk.MsgTypeURL(msg), "/cosmos.distribution.v1beta1.MsgWithdrawDelegatorReward") {
+			hasToPayFee = false
+		}
+		if strings.HasPrefix(sdk.MsgTypeURL(msg), "/cosmos.distribution.v1beta1.MsgWithdrawValidatorCommission") {
+			hasToPayFee = false
+		}
+		if strings.HasPrefix(sdk.MsgTypeURL(msg), "/cosmos.staking.v1beta1.MsgCreateValidator") {
+			hasToPayFee = false
+		}
 	}
 
-	// deduct the fees
-	if !fee.IsZero() {
-		err := DeductFees(dfd.bankKeeper, ctx, deductFeesFromAcc, fee)
+	if hasToPayFee {
+		if deductFeesFromAcc == nil {
+			return sdkerrors.ErrUnknownAddress.Wrapf("fee payer address: %s does not exist", deductFeesFrom)
+		}
+		err := DeductFees(dfd.bankKeeper, ctx, deductFeesFromAcc, feeTx.GetFee())
 		if err != nil {
 			return err
 		}
