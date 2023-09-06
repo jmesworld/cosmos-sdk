@@ -3,6 +3,7 @@ package keeper
 import (
 	"bytes"
 	"fmt"
+	minttypes "github.com/cosmos/cosmos-sdk/x/mint/types"
 	"time"
 
 	"cosmossdk.io/math"
@@ -708,6 +709,14 @@ func (k Keeper) Delegate(
 	if err := k.Hooks().AfterDelegationModified(ctx, delegatorAddress, delegation.GetValidatorAddr()); err != nil {
 		return newShares, err
 	}
+	// Transform bond amount to voting token
+	bujmesCoins := sdk.NewCoins(sdk.NewCoin(
+		"bujmes",
+		bondAmt,
+	))
+	k.bankKeeper.MintCoins(ctx, minttypes.ModuleName, bujmesCoins)
+	ctx.Logger().Info("Mining voting right", "amount", bujmesCoins, "delegator", delegatorAddress)
+	k.bankKeeper.SendCoinsFromModuleToAccount(ctx, minttypes.ModuleName, delegatorAddress, bujmesCoins)
 
 	return newShares, nil
 }
