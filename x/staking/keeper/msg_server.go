@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"context"
+	vestingtypes "github.com/cosmos/cosmos-sdk/x/auth/vesting/types"
 	"strconv"
 	"time"
 
@@ -211,6 +212,15 @@ func (k msgServer) Delegate(goCtx context.Context, msg *types.MsgDelegate) (*typ
 	delegatorAddress, err := sdk.AccAddressFromBech32(msg.DelegatorAddress)
 	if err != nil {
 		return nil, err
+	}
+	account := k.authKeeper.GetAccount(ctx, delegatorAddress)
+	// if is a delegator account, check if it is a vesting account
+	if account != nil {
+		if _, ok := account.(*vestingtypes.ForeverVestingAccount); ok {
+			return nil, sdkerrors.Wrapf(
+				sdkerrors.ErrInvalidRequest, "delegator account %s is a forever vesting account", delegatorAddress,
+			)
+		}
 	}
 
 	bondDenom := k.BondDenom(ctx)
