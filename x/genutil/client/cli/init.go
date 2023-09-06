@@ -129,6 +129,7 @@ func InitCmd(mbm module.BasicManager, defaultNodeHome string) *cobra.Command {
 			}
 
 			// Overwrites the SDK default denom for side-effects
+			sdk.DefaultBondDenom = "ujmes"
 			if defaultDenom != "" {
 				sdk.DefaultBondDenom = defaultDenom
 			}
