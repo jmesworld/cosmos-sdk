@@ -61,6 +61,7 @@ func BeginBlocker(ctx sdk.Context, k keeper.Keeper, ic types.InflationCalculatio
 		if err != nil {
 			panic(err)
 		}
+		logger.Info("Minted", "amount", mintedCoins.String())
 		// send the minted coins to the fee collector account
 		err = k.AddCollectedFees(ctx, mintedCoins)
 		if err != nil {
@@ -69,12 +70,6 @@ func BeginBlocker(ctx sdk.Context, k keeper.Keeper, ic types.InflationCalculatio
 
 	} else {
 		logger.Info("Abort minting. ", "total", expectedNextSupply, "would exceed", params.MaxMintableAmount)
-	}
-
-	// send the minted coins to the fee collector account
-	err := k.AddCollectedFees(ctx, mintedCoins)
-	if err != nil {
-		panic(err)
 	}
 
 	if mintedCoin.Amount.IsInt64() {
