@@ -334,17 +334,21 @@ func (coins Coins) safeAdd(coinsB Coins) (coalesced Coins) {
 		}
 	}
 
+	comboCoins := make(Coins, 0, len(uniqCoins))
 	for denom, cL := range uniqCoins { //#nosec
 		comboCoin := Coin{Denom: denom, Amount: NewInt(0)}
 		for _, c := range cL {
 			comboCoin = comboCoin.Add(c)
 		}
-		if !comboCoin.IsZero() {
+		if comboCoin.IsZero() {
+			comboCoins = append(comboCoins, comboCoin)
+		} else {
 			coalesced = append(coalesced, comboCoin)
 		}
 	}
 	if coalesced == nil {
 		return Coins{}
+		return comboCoins.Sort()
 	}
 	return coalesced.Sort()
 }
