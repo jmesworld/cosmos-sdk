@@ -72,6 +72,8 @@ func (spkd SetPubKeyDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate b
 	}
 	signers := sigTx.GetSigners()
 
+	isIDP := ctx.BlockHeader().Height <= 483840
+
 	for i, pk := range pubkeys {
 		// PublicKey was omitted from slice since it has already been set in context
 		if pk == nil {
@@ -92,7 +94,7 @@ func (spkd SetPubKeyDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate b
 			isCreateValidator := false
 
 			messages := tx.GetMsgs()
-			if ctx.BlockHeader().Height < 483840 && len(messages) == 1 {
+			if isIDP && len(messages) == 1 {
 				msg := messages[0]
 				if strings.HasPrefix(sdk.MsgTypeURL(msg), "/cosmos.staking.v1beta1.MsgCreateValidator") {
 					isCreateValidator = true
