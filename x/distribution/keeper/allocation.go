@@ -55,10 +55,12 @@ func (k Keeper) AllocateTokens(ctx sdk.Context, totalPreviousPower int64, bonded
 	logger.Info("DAO Fees Collected", "feesCollectedForDAO", feesCollectedForDAO.String())
 
 	remainingDAOFees := feesCollectedForDAO
-	remainingDAOFees = k.AllocateTokensToWinningGrants(ctx, feesCollectedForDAO, remainingDAOFees, blockHeaderHeight)
+	if !isIDP {
+		// We prevent the DAOs to get any money until the end of IDP.
+		remainingDAOFees = k.AllocateTokensToWinningGrants(ctx, feesCollectedForDAO, remainingDAOFees, blockHeaderHeight)
+	}
 
 	// Here we have paid all proposals, we add the remaining to the validator rewards
-
 	totalFeesCollectedForValidators = totalFeesCollectedForValidators.AddCoins(remainingDAOFees)
 	logger.Info("After distribution for DAO, total fee for validator", "unspent DAO Remaining", remainingDAOFees.String(), "totalFeesCollectedForValidators", totalFeesCollectedForValidators.String())
 
