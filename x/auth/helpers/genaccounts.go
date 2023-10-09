@@ -26,6 +26,7 @@ func AddGenesisAccount(
 	appendAcct bool,
 	genesisFileUrl, amountStr, vestingAmtStr string,
 	vestingStart, vestingEnd int64,
+	vestingUnlockPercentage string,
 ) error {
 	coins, err := sdk.ParseCoinsNormalized(amountStr)
 	if err != nil {
@@ -52,6 +53,23 @@ func AddGenesisAccount(
 		}
 
 		switch {
+
+		case vestingUnlockPercentage != "":
+			originalVesting := baseVestingAccount.OriginalVesting
+
+			vestedCoins := make(sdk.Coins, len(originalVesting))
+
+			for i, coin := range originalVesting {
+				vestedCoins[i] = sdk.NewCoin(coin.Denom, sdk.ZeroInt())
+			}
+
+			genAccount = authvesting.NewForeverVestingAccount(
+				baseAccount,
+				originalVesting,
+				vestingUnlockPercentage,
+				vestedCoins,
+			)
+
 		case vestingStart != 0 && vestingEnd != 0:
 			genAccount = authvesting.NewContinuousVestingAccountRaw(baseVestingAccount, vestingStart)
 

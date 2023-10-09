@@ -15,10 +15,11 @@ import (
 )
 
 const (
-	flagVestingStart = "vesting-start-time"
-	flagVestingEnd   = "vesting-end-time"
-	flagVestingAmt   = "vesting-amount"
-	flagAppendMode   = "append"
+	flagVestingStart            = "vesting-start-time"
+	flagVestingEnd              = "vesting-end-time"
+	flagVestingUnlockPercentage = "vesting-unlock-percentage"
+	flagVestingAmt              = "vesting-amount"
+	flagAppendMode              = "append"
 )
 
 // AddGenesisAccountCmd returns add-genesis-account cobra Command.
@@ -70,9 +71,10 @@ contain valid denominations. Accounts may optionally be supplied with vesting pa
 			appendflag, _ := cmd.Flags().GetBool(flagAppendMode)
 			vestingStart, _ := cmd.Flags().GetInt64(flagVestingStart)
 			vestingEnd, _ := cmd.Flags().GetInt64(flagVestingEnd)
+			vestingUnlockPercentage, _ := cmd.Flags().GetString(flagVestingUnlockPercentage)
 			vestingAmtStr, _ := cmd.Flags().GetString(flagVestingAmt)
 
-			return auth.AddGenesisAccount(clientCtx.Codec, addr, appendflag, config.GenesisFile(), args[1], vestingAmtStr, vestingStart, vestingEnd)
+			return auth.AddGenesisAccount(clientCtx.Codec, addr, appendflag, config.GenesisFile(), args[1], vestingAmtStr, vestingStart, vestingEnd, vestingUnlockPercentage)
 		},
 	}
 
@@ -81,6 +83,7 @@ contain valid denominations. Accounts may optionally be supplied with vesting pa
 	cmd.Flags().String(flagVestingAmt, "", "amount of coins for vesting accounts")
 	cmd.Flags().Int64(flagVestingStart, 0, "schedule start time (unix epoch) for vesting accounts")
 	cmd.Flags().Int64(flagVestingEnd, 0, "schedule end time (unix epoch) for vesting accounts")
+	cmd.Flags().String(flagVestingUnlockPercentage, "", "Specify vesting unlock percentage - as dec string '1.0' = 100% for forever vesting accounts")
 	cmd.Flags().Bool(flagAppendMode, false, "append the coins to an account already in the genesis.json file")
 	flags.AddQueryFlagsToCmd(cmd)
 
