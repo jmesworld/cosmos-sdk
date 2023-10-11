@@ -89,6 +89,36 @@ func (k Keeper) AllocateTokens(ctx sdk.Context, totalPreviousPower int64, bonded
 		}
 	}
 
+	// Unlock vesting
+	foreverVestingAccounts := k.GetAuthKeeper().GetAllForeverVestingAccounts(ctx)
+
+	sumVestingSupplyPercentage := sdk.NewDec(0)
+	convertedVestingPercentages := make([]sdk.Dec, len(foreverVestingAccounts))
+	// We need to distribute all bujmes to them accoringly to their own ratio of vestingSupplyPercentage
+	for i, account := range foreverVestingAccounts {
+		vestingSupplyPercentage, err := sdk.NewDecFromStr(account.VestingSupplyPercentage)
+		if err != nil {
+			logger.Info("Error while parsing vestingSupplyPercentage", "vestingSupplyPercentage", account.VestingSupplyPercentage)
+			continue
+		}
+		convertedVestingPercentages[i] = vestingSupplyPercentage
+		sumVestingSupplyPercentage = sumVestingSupplyPercentage.Add(vestingSupplyPercentage)
+	}
+	// We now have the total vesting supply percentage, we can calculate the ratio of each account
+	for i, account := range foreverVestingAccounts {
+		vestedAmount := totalFeesCollected.AmountOf("bujmes").Mul(convertedVestingPercentages[i]).Quo(sumVestingSupplyPercentage)
+		bujmesAwarded := sdk.NewCoin("bujmes", vestedAmount.TruncateInt())
+		distributedVestedCoins := sdk.NewDecCoinsFromCoins(bujmesAwarded)
+		logger.Info("Distributing value to "+account.Address, "distributedVestedCoins", distributedVestedCoins.String())
+		addr, err := sdk.AccAddressFromBech32(account.Address)
+		if err != nil {
+			// handle error, perhaps log it and continue
+			continue
+		}
+		k.AllocateTokensToAddress(ctx, addr, distributedVestedCoins)
+		remainingFeesForValidators = remainingFeesForValidators.Sub(distributedVestedCoins)
+	}
+
 	// calculate fraction allocated to validators
 	// Community tax is set at 0 for jmes-888
 	communityTax := k.GetCommunityTax(ctx)
@@ -118,12 +148,17 @@ func (k Keeper) AllocateTokens(ctx sdk.Context, totalPreviousPower int64, bonded
 		remainingFeesForValidators = remainingFeesForValidators.Sub(validatorReward)
 	}
 
-	portionOfSupplyVesting, _ := sdk.NewDecFromStr("0.1")
-	inversePercentage := sdk.NewDec(1).Sub(portionOfSupplyVesting)
-	vestedDivider := inversePercentage.Mul(sdk.NewDec(10))
-	vestedAmount, _ := totalFeesCollected.QuoDec(vestedDivider).TruncateDecimal()
+	//// Looping over forever vesting accounts to get the total percentage of supply vesting
+	//portionOfSupplyVesting, _ :=
+	//inversePercentage := sdk.NewDec(1).Sub(portionOfSupplyVesting)
+	//vestedDivider := inversePercentage.Mul(sdk.NewDec(10))
+	//vestedAmount, _ := totalFeesCollected.QuoDec(vestedDivider).TruncateDecimal()
 
-	logger.Info("Vested Unlocked", "amount", vestedAmount.AmountOf("ujmes"))
+	// Vested amount is the equivalent in ujmes that the bujmes minted
+	//vestedAmount := totalFeesCollected.AmountOf("bujmes")
+	vestedAmount := sdk.NewCoin("bujmes", sdk.Int(totalFeesCollected.AmountOf("ujmes")))
+
+	logger.Info("Vesting Unlocked", "amount", vestedAmount.String())
 
 	// allocate community funding
 	// Keep any remaining to community pool.

@@ -239,6 +239,24 @@ func (sgcd SigGasConsumeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simula
 	// stdSigs contains the sequence number, account number, and signatures.
 	// When simulating, this would just be a 0-length slice.
 	signerAddrs := sigTx.GetSigners()
+	// Check if we are trying to send bujmes
+	//FIXME: sigverify is not the best place to do this...
+	messages := tx.GetMsgs()
+
+	for _, msg := range messages {
+		if strings.HasPrefix(sdk.MsgTypeURL(msg), "/cosmos.bank.v1beta1.MsgSend") {
+			msgSend, ok := msg.(*banktypes.MsgSend)
+			// We prevent sending bujmes
+			if ok {
+				for _, amount := range msgSend.Amount {
+					if amount.Denom == "bujmes" {
+						return ctx, sdkerrors.Wrap(sdkerrors.ErrUnauthorized, "cannot transfer bujmes")
+					}
+				}
+			}
+
+		}
+	}
 
 	for i, sig := range sigs {
 		signerAcc, err := GetSignerAcc(ctx, sgcd.ak, signerAddrs[i])

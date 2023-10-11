@@ -27,22 +27,49 @@ func BeginBlocker(ctx sdk.Context, k keeper.Keeper, ic types.InflationCalculatio
 	minter.AnnualProvisions = minter.NextAnnualProvisions(params, totalStakingSupply)
 	k.SetMinter(ctx, minter)
 
-	// mint coins, update supply
-	mintedCoin := minter.BlockProvision(params)
-	mintedCoins := sdk.NewCoins(mintedCoin)
+	expectedMintedJMES := minter.BlockProvision(params)
 
-	divider, _ := sdk.NewDecFromStr("0.9")
-	mintedCoinsDec := mintedCoins.AmountOf("ujmes")
-	unlockedVesting := mintedCoinsDec.Quo(math.Int(divider)).Sub(mintedCoinsDec)
-	totalAmount := mintedCoins.AmountOf("ujmes").Add(unlockedVesting)
-
+	totalVestingSupplyPercentage := sdk.NewDec(0)
 	foreverVestingAccounts := k.GetAccountKeeper().GetAllForeverVestingAccounts(ctx)
+
+	for _, account := range foreverVestingAccounts {
+		vestingSupplyPercentage, _ := sdk.NewDecFromStr(account.VestingSupplyPercentage)
+		totalVestingSupplyPercentage = totalVestingSupplyPercentage.Add(vestingSupplyPercentage)
+	}
+
+	logger.Info("Total vesting supply percentage", "amount", totalVestingSupplyPercentage.String())
+
+	// Portion that is not forever vested as a decimal
+	//foreverVestedPercentage := math.NewIntWithDecimal(1, 0).Sub(totalVestingSupplyPercentage).Quo(math.NewIntWithDecimal(1, 0))
+	logger.Info("Forever vested percentage", "amount", totalVestingSupplyPercentage.String())
+	unlockedJMES := sdk.NewDecFromInt(expectedMintedJMES.Amount).Mul(totalVestingSupplyPercentage).TruncateInt()
+
+	// Minted jmes is the expected minted coins minus the forever vested portion
+	mintedJMES := expectedMintedJMES.SubAmount(unlockedJMES)
+
+	logger.Info("Minted JMES", "amount", mintedJMES.String())
+	logger.Info("Unlocked JMES", "amount", unlockedJMES.String())
+	logger.Info("Total JMES", "amount", expectedMintedJMES.String())
+
+	// Unlocked vesting is 1
+	//unlockedVesting := mintedCoinsDec.Quo(math.Int(divider)).Sub(mintedCoinsDec)
+	//logger.Info("Unlocked vesting", "amount", unlockedVesting.String())
+
+	//mintedCoins := expectedMintedCoins
+	//mintedJMES := mintedCoins.AmountOf("ujmes")
+	//logger.Info("Minted JMES", "amount", mintedJMES.String())
+
+	//totalAmount := mintedCoins.AmountOf("ujmes").Add(unlockedVesting)
+
+	//logger.Info("Total amount", "amount", totalAmount.String())
+
 	percentageVestingOfSupply := sdk.NewDec(0)
 	totalVestedAmount := sdk.NewDec(0)
 
 	for _, account := range foreverVestingAccounts {
 		vestingSupplyPercentage, _ := sdk.NewDecFromStr(account.VestingSupplyPercentage)
-		vestedForBlock := sdk.NewCoin("ujmes", totalAmount.Mul(math.Int(vestingSupplyPercentage)))
+		vestedForBlock := sdk.NewCoin("ujmes", expectedMintedJMES.Amount.Mul(math.Int(vestingSupplyPercentage)))
+		logger.Info("Vesting", "account", account.Address, "vestingSupplyPercentage", vestingSupplyPercentage.String(), "vestedForBlock", vestedForBlock.String())
 
 		percentageVestingOfSupply = percentageVestingOfSupply.Add(vestingSupplyPercentage)
 		account.AlreadyVested = account.AlreadyVested.Add(vestedForBlock)
@@ -51,12 +78,26 @@ func BeginBlocker(ctx sdk.Context, k keeper.Keeper, ic types.InflationCalculatio
 	}
 
 	currentSupply := k.GetSupply(ctx, "ujmes").Amount
-	expectedNextSupply := sdk.NewInt(currentSupply.Int64()).Add(mintedCoins.AmountOf("ujmes")).Uint64()
-	maxMintableAmount := params.GetMaxMintableAmount()
+	expectedNextSupply := currentSupply.Uint64() + mintedJMES.Amount.Uint64()
+	logger.Info("Current supply", "amount", currentSupply.String())
+	logger.Info("Expected next supply", "amount", expectedNextSupply)
 
-	logger.Info("Prepare to mint", "blockheight", ctx.BlockHeight(), "mintAmount", mintedCoins.AmountOf("ujmes").String(), ".currentSupply", currentSupply, "expectedNextSupply", expectedNextSupply, "maxSupply", maxMintableAmount, "unlockedVesting", unlockedVesting)
+	maxMintableAmount := params.GetMaxMintableAmount()
+	logger.Info("Max mintable amount", "amount", maxMintableAmount)
+
+	//logger.Info("Prepare to mint", "blockheight", ctx.BlockHeight(), "mintAmount", mintedCoins.AmountOf("ujmes").String(), ".currentSupply", currentSupply, "expectedNextSupply", expectedNextSupply, "maxSupply", maxMintableAmount, "unlockedVesting", unlockedVesting)
+
+	mintedCoins := sdk.NewCoins(mintedJMES)
 
 	if expectedNextSupply <= maxMintableAmount {
+		// ForeverVesting are incentivised to not stake their tokens, so we need to specifically mint some bujmes
+		// token to them at a 1:1 ratio with the ujmes tokens unlocked
+		mintedBJMES := sdk.NewCoin("bujmes", unlockedJMES)
+
+		// Minted coin is all the mintedJMES + the mintedBJMES
+		mintedCoins = mintedCoins.Add(mintedBJMES)
+
+		logger.Info("Minted", "amount", mintedCoins.String())
 		err := k.MintCoins(ctx, mintedCoins)
 		if err != nil {
 			panic(err)
@@ -72,17 +113,22 @@ func BeginBlocker(ctx sdk.Context, k keeper.Keeper, ic types.InflationCalculatio
 		logger.Info("Abort minting. ", "total", expectedNextSupply, "would exceed", params.MaxMintableAmount)
 	}
 
-	if mintedCoin.Amount.IsInt64() {
-		defer telemetry.ModuleSetGauge(types.ModuleName, float32(mintedCoin.Amount.Int64()), "minted_tokens")
+	event := sdk.NewEvent(
+		types.EventTypeMint,
+		sdk.NewAttribute(types.AttributeKeyBondedRatio, bondedRatio.String()),
+		sdk.NewAttribute(types.AttributeKeyInflation, minter.Inflation.String()),
+		sdk.NewAttribute(types.AttributeKeyAnnualProvisions, minter.AnnualProvisions.String()),
+	)
+
+	// For all mintedCoins's amounts
+	for _, mintedCoin := range mintedCoins {
+		if mintedCoin.Amount.IsInt64() {
+			defer telemetry.ModuleSetGauge(types.ModuleName, float32(mintedCoin.Amount.Int64()), "minted_tokens")
+		}
+		event = event.AppendAttributes(sdk.NewAttribute(sdk.AttributeKeyAmount, mintedCoin.Amount.String()))
 	}
 
 	ctx.EventManager().EmitEvent(
-		sdk.NewEvent(
-			types.EventTypeMint,
-			sdk.NewAttribute(types.AttributeKeyBondedRatio, bondedRatio.String()),
-			sdk.NewAttribute(types.AttributeKeyInflation, minter.Inflation.String()),
-			sdk.NewAttribute(types.AttributeKeyAnnualProvisions, minter.AnnualProvisions.String()),
-			sdk.NewAttribute(sdk.AttributeKeyAmount, mintedCoin.Amount.String()),
-		),
+		event,
 	)
 }
