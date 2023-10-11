@@ -51,24 +51,15 @@ func BeginBlocker(ctx sdk.Context, k keeper.Keeper, ic types.InflationCalculatio
 	logger.Info("Unlocked JMES", "amount", unlockedJMES.String())
 	logger.Info("Total JMES", "amount", expectedMintedJMES.String())
 
-	// Unlocked vesting is 1
-	//unlockedVesting := mintedCoinsDec.Quo(math.Int(divider)).Sub(mintedCoinsDec)
-	//logger.Info("Unlocked vesting", "amount", unlockedVesting.String())
-
-	//mintedCoins := expectedMintedCoins
-	//mintedJMES := mintedCoins.AmountOf("ujmes")
-	//logger.Info("Minted JMES", "amount", mintedJMES.String())
-
-	//totalAmount := mintedCoins.AmountOf("ujmes").Add(unlockedVesting)
-
-	//logger.Info("Total amount", "amount", totalAmount.String())
-
 	percentageVestingOfSupply := sdk.NewDec(0)
 	totalVestedAmount := sdk.NewDec(0)
 
 	for _, account := range foreverVestingAccounts {
 		vestingSupplyPercentage, _ := sdk.NewDecFromStr(account.VestingSupplyPercentage)
-		vestedForBlock := sdk.NewCoin("ujmes", expectedMintedJMES.Amount.Mul(math.Int(vestingSupplyPercentage)))
+
+		vestingSupplyPercentage.Mul(expectedMintedJMES.Amount.ToLegacyDec())
+
+		vestedForBlock := sdk.NewCoin("ujmes", vestingSupplyPercentage.Mul(expectedMintedJMES.Amount.ToLegacyDec()).TruncateInt())
 		logger.Info("Vesting", "account", account.Address, "vestingSupplyPercentage", vestingSupplyPercentage.String(), "vestedForBlock", vestedForBlock.String())
 
 		percentageVestingOfSupply = percentageVestingOfSupply.Add(vestingSupplyPercentage)
