@@ -72,7 +72,7 @@ func (spkd SetPubKeyDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate b
 	}
 	signers := sigTx.GetSigners()
 
-	isIDP := ctx.BlockHeader().Height <= 30240
+	isIDP := ctx.BlockHeader().Height <= 483840
 
 	for i, pk := range pubkeys {
 		// PublicKey was omitted from slice since it has already been set in context

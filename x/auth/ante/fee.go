@@ -102,7 +102,7 @@ func (dfd DeductFeeDecorator) checkDeductFee(ctx sdk.Context, sdkTx sdk.Tx, fee 
 	messages := sdkTx.GetMsgs()
 	hasToPayFee := true
 
-	isIDP := ctx.BlockHeader().Height <= 30240
+	isIDP := ctx.BlockHeader().Height <= 483840
 
 	// On initial period, we need liquidity to bootstrap fairly the chain, hence, we remove fees
 	// This only applies to withdrawals of the rewards and single purpose transactions

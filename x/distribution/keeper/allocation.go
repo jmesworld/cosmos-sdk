@@ -31,7 +31,7 @@ func (k Keeper) AllocateTokens(ctx sdk.Context, totalPreviousPower int64, bonded
 	// It create an incentive model where, because of the lack of additional minted tokens
 	// the prior ones have more "values", incentivising the validators to have scrutinity on DAOs.
 
-	isIDP := blockHeaderHeight <= 30240
+	isIDP := blockHeaderHeight <= 483840
 
 	logger.Info("Distribution started at blockheight: ", blockHeaderHeight)
 	logger.Info("TotalFeesCollected:", totalFeesCollected)
